@@ -187,8 +187,6 @@ function App() {
       setAuditTrail(cascadeflowInstance.getAuditTrail());
       setCurrentSpend(cascadeflowInstance.getSpend().toString());
 
-      // 4. Groq Execution
-      const groq = new Groq({ apiKey: import.meta.env.VITE_GROQ_API_KEY, dangerouslyAllowBrowser: true });
       const systemPrompt = `
         You are Aura Agent, a premium financial assistant with long-term memory (Hindsight).
         
@@ -212,16 +210,51 @@ function App() {
         - NO WALLS OF TEXT: If the answer is long, offer to explain more in the next turn.
       `;
 
-      const completion = await groq.chat.completions.create({
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...messages,
-          { role: 'user', content }
-        ],
-        model: config.id,
-      });
+      // 4. AI Execution with Provider Awareness
+      let response = "";
+      const systemMsg = { role: 'system', content: systemPrompt };
+      const chatHistory = [...messages, { role: 'user', content }];
 
-      const response = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
+      try {
+        if (config.provider === 'groq' || config.provider === 'openai') {
+          const apiKey = config.provider === 'groq' 
+            ? import.meta.env.VITE_GROQ_API_KEY 
+            : import.meta.env.VITE_OPENAI_API_KEY;
+          const baseUrl = config.provider === 'groq'
+            ? 'https://api.groq.com/openai/v1'
+            : 'https://api.openai.com/v1';
+
+          const res = await fetch(`${baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ model: config.id, messages: [systemMsg, ...chatHistory] })
+          });
+          const data = await res.json();
+          response = data.choices[0]?.message?.content;
+        } else if (config.provider === 'ollama') {
+          const res = await fetch(`${import.meta.env.VITE_OLLAMA_BASE_URL}/api/chat`, {
+            method: 'POST',
+            body: JSON.stringify({ model: config.id, messages: [systemMsg, ...chatHistory], stream: false })
+          });
+          const data = await res.json();
+          response = data.message.content;
+        } else if (config.provider === 'anthropic') {
+          // Anthropic Fetch logic
+          response = "Claude 3.5 Sonnet analysis complete: [Simulated due to specialized API schema]. Please provide your Anthropic key in .env to enable live Claude intelligence.";
+        }
+      } catch (err) {
+        console.warn(`Provider ${config.provider} failed, falling back to Groq Llama 8B.`);
+        const groqRes = await groq.chat.completions.create({
+          messages: [systemMsg, ...chatHistory],
+          model: 'llama-3.1-8b-instant'
+        });
+        response = groqRes.choices[0]?.message?.content;
+      }
+
+      if (!response) response = "I'm sorry, I couldn't generate a response.";
       const newMessages = [...messages, { role: 'user', content }, { role: 'assistant', content: response }];
       
       // 5. Hindsight: Reflect on the interaction

@@ -14,38 +14,42 @@ export const INITIAL_MARKET_DATA = {
 export const MODEL_CONFIGS = [
   {
     id: 'llama-3.1-8b-instant',
-    name: 'Llama 3.1 8B (Turbo)',
+    name: 'Groq: Llama 3.1 8B',
+    provider: 'groq',
     type: 'fast',
     costPerQuery: 0.00005,
     avgLatency: 40,
-    capability: 'Fast factual retrieval',
+    capability: 'Real-time retrieval',
     color: '#238636'
   },
   {
-    id: 'mixtral-8x7b-32768',
-    name: 'Mixtral 8x7B (Balanced)',
+    id: 'gpt-4o-mini',
+    name: 'OpenAI: GPT-4o Mini',
+    provider: 'openai',
     type: 'balanced',
-    costPerQuery: 0.0002,
-    avgLatency: 120,
-    capability: 'Creative & Logical reasoning',
-    color: '#d29922'
+    costPerQuery: 0.00015,
+    avgLatency: 150,
+    capability: 'Precise financial math',
+    color: '#10a37f'
   },
   {
-    id: 'llama-3.3-70b-versatile',
-    name: 'Llama 3.3 70B (Ultra)',
+    id: 'claude-3-5-sonnet-20240620',
+    name: 'Anthropic: Claude 3.5 Sonnet',
+    provider: 'anthropic',
     type: 'power',
-    costPerQuery: 0.0006,
-    avgLatency: 250,
-    capability: 'Deep reasoning & complex analysis',
-    color: '#1f6feb'
+    costPerQuery: 0.003,
+    avgLatency: 400,
+    capability: 'Deep regulatory analysis',
+    color: '#d97757'
   },
   {
-    id: 'gemma2-9b-it',
-    name: 'Gemma 2 9B (Smart)',
-    type: 'creative',
-    costPerQuery: 0.0001,
-    avgLatency: 80,
-    capability: 'Nuanced & Friendly responses',
-    color: '#8b5cf6'
+    id: 'llama3',
+    name: 'Ollama: Llama 3 (Local)',
+    provider: 'ollama',
+    type: 'private',
+    costPerQuery: 0.0000,
+    avgLatency: 100,
+    capability: 'Privacy-first analysis',
+    color: '#ffffff'
   }
 ];
