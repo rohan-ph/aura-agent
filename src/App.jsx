@@ -531,9 +531,6 @@ function App() {
           <div className="intelligence-card-wrapper">
             <CascadeAudit auditTrail={auditTrail} currentSpend={currentSpend} />
           </div>
-          <div className="intelligence-card-wrapper">
-            <MemoryBank mentalModel={mentalModel} facts={facts} />
-          </div>
         </aside>
       )}
     </div>
