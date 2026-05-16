@@ -529,7 +529,11 @@ function App() {
       {activeTab === 'chat' && (
         <aside className="intelligence-panel">
           <div className="intelligence-card-wrapper">
-            <CascadeAudit auditTrail={auditTrail} currentSpend={currentSpend} />
+            <CascadeAudit 
+              auditTrail={auditTrail} 
+              currentSpend={currentSpend} 
+              facts={facts}
+            />
           </div>
         </aside>
       )}
