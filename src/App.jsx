@@ -189,9 +189,25 @@ function App() {
 
       // 4. Groq Execution
       const groq = new Groq({ apiKey: import.meta.env.VITE_GROQ_API_KEY, dangerouslyAllowBrowser: true });
+      const systemPrompt = `
+        You are Aura Agent, a premium financial assistant with long-term memory (Hindsight).
+        
+        USER IDENTITY:
+        - Name: ${mentalModel.userName || 'Valued User'}
+        - Risk Profile: ${mentalModel.riskProfile}
+        - Interests: ${mentalModel.interests.join(', ')}
+        
+        LONG-TERM MEMORY (RECALLED FACTS):
+        ${context || 'No specific facts recalled for this query, but you know the user from previous sessions.'}
+        
+        MISSION:
+        Provide personalized, data-driven financial advice. Reference the user's name and past history naturally.
+        Never claim you don't remember them; you have full access to their Hindsight Memory Bank.
+      `;
+
       const completion = await groq.chat.completions.create({
         messages: [
-          { role: 'system', content: `You are Aura Agent, a premium financial assistant. User Context:\n${context}` },
+          { role: 'system', content: systemPrompt },
           ...messages,
           { role: 'user', content }
         ],

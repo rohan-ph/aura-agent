@@ -73,10 +73,17 @@ export class Hindsight {
 
   recall(query) {
     // Simple keyword based recall
-    const keywords = query.toLowerCase().split(' ');
-    return this.memory.facts.filter(fact => 
+    const keywords = query.toLowerCase().split(' ').filter(kw => kw.length > 2);
+    let results = this.memory.facts.filter(fact => 
       keywords.some(kw => fact.content.toLowerCase().includes(kw))
     );
+
+    // If no specific match, return the 5 most recent facts as general context
+    if (results.length === 0) {
+      results = this.memory.facts.slice(-5).reverse();
+    }
+
+    return results;
   }
 
   reflect() {
