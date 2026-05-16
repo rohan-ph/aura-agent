@@ -137,16 +137,7 @@ app.get('/api/auth/google/callback',
   (req, res) => {
     const user = req.user;
     const token = jwt.sign({ userId: user._id || `demo_${user.email}` }, JWT_SECRET, { expiresIn: '7d' });
-    // Redirect to frontend with token and user data as query params
-    const userData = encodeURIComponent(JSON.stringify({
-      email: user.email,
-      mentalModel: user.mentalModel || { userName: user.name, riskProfile: 'Unknown', interests: [] },
-      facts: user.facts || [],
-      totalSpend: user.totalSpend || 0,
-      auditTrail: user.auditTrail || [],
-      conversations: user.conversations || []
-    }));
-    res.redirect(`http://localhost:5173/?token=${token}&user=${userData}`);
+    res.redirect(`http://localhost:5173/?token=${token}`);
   }
 );
 

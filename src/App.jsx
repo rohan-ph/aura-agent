@@ -48,20 +48,26 @@ function App() {
   
   const chatEndRef = useRef(null);
 
-  // Handle Google OAuth redirect — picks up ?token=...&user=... from URL
+  // Handle Google OAuth redirect — picks up ?token=... from URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
     const userRaw = params.get('user');
-    if (token && userRaw) {
-      try {
-        const user = JSON.parse(decodeURIComponent(userRaw));
-        handleLogin({ token, user });
-        // Clean the URL
-        window.history.replaceState({}, document.title, '/');
-      } catch (e) {
-        console.error('OAuth redirect parse error:', e);
+    
+    if (token) {
+      if (userRaw) {
+        // Old way (fallback)
+        try {
+          const user = JSON.parse(decodeURIComponent(userRaw));
+          handleLogin({ token, user });
+        } catch (e) { console.error(e); }
+      } else {
+        // New way: Just set token and let hydrateSession do the work
+        setUserToken(token);
+        setIsLoggedIn(true);
       }
+      // Clean the URL
+      window.history.replaceState({}, document.title, '/');
     }
   }, []);
 
@@ -329,7 +335,7 @@ function App() {
       }
     };
     hydrateSession();
-  }, []);
+  }, [isLoggedIn, userToken]);
 
   // Switch messages when activeChatId changes
   useEffect(() => {
