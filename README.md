@@ -1,4 +1,4 @@
-# Adaptive Financial Agent 🚀
+# Aura Agent 🚀
 
 A high-fidelity AI-powered financial assistant built with **React + Groq Cloud**, featuring persistent memory via **Hindsight** and intelligent model routing via **Cascadeflow**.
 

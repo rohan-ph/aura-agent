@@ -33,7 +33,7 @@ function App() {
   });
 
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Welcome back to your Adaptive Financial Agent. I'm now connected to **Groq Cloud**. How can I assist you today?" }
+    { role: 'assistant', content: "Welcome back to your **Aura Agent**. I'm now connected to **Groq Cloud**. How can I assist you today?" }
   ]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [auditTrail, setAuditTrail] = useState([]);
@@ -213,7 +213,7 @@ function App() {
       <aside className="sidebar">
         <div className="logo">
           <div className="logo-icon"><Zap size={20} /></div>
-          <span className="logo-text">AFA Agent</span>
+          <span className="logo-text">Aura Agent</span>
         </div>
         
         <nav className="sidebar-nav">

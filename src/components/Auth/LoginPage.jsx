@@ -51,7 +51,7 @@ const LoginPage = ({ onLogin }) => {
           <div className="login-logo">
             <Zap size={32} />
           </div>
-          <h1>Adaptive Financial Agent</h1>
+          <h1>Aura Agent</h1>
           <p>Secure Access to Your Intelligence Bank</p>
         </div>
 
