@@ -9,7 +9,7 @@ import MemoryBank from './components/Intelligence/MemoryBank';
 import PortfolioCard from './components/Sidebar/PortfolioCard';
 import LoginPage from './components/Auth/LoginPage';
 import UserProfile from './components/Profile/UserProfile';
-import { LayoutDashboard, MessageSquare, Settings, LogOut, Zap, User } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Settings, LogOut, Zap, User, PlusCircle } from 'lucide-react';
 
 import Groq from 'groq-sdk';
 
@@ -106,6 +106,13 @@ function App() {
     localStorage.removeItem('afa_is_logged_in');
     localStorage.removeItem('afa_user_email');
     localStorage.removeItem('afa_token');
+  };
+
+  const handleNewConversation = () => {
+    setMessages([
+      { role: 'assistant', content: "New conversation started. I still have access to your **Hindsight** memory bank. How can I help you next?" }
+    ]);
+    setActiveTab('chat');
   };
 
   const handleUpdateProfile = (formData) => {
@@ -222,6 +229,12 @@ function App() {
             onClick={() => setActiveTab('dashboard')}
           >
             <LayoutDashboard size={18} /> Dashboard
+          </div>
+          <div 
+            className="nav-item action-item"
+            onClick={handleNewConversation}
+          >
+            <PlusCircle size={18} color="var(--primary)" /> New Conversation
           </div>
           <div 
             className={`nav-item ${activeTab === 'chat' ? 'active' : ''}`}
