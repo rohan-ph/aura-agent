@@ -37,12 +37,22 @@ export class Hindsight {
       }
     }
     
-    // 2. Name Extraction
-    const nameMatch = text.match(/(?:i am|my name is)\s+([A-Za-z]+)/i);
+    // 2. Name Extraction (More robust)
+    const nameMatch = text.match(/(?:my name is)\s+([A-Za-z]+)/i);
+    const iAmMatch = text.match(/^i am\s+([A-Za-z]+)$/i); // Only match "I am [Name]" as a standalone sentence
+    
     if (nameMatch && nameMatch[1]) {
       const name = nameMatch[1];
-      this.memory.mentalModel.userName = name;
-      this.addFact(`User's name is ${name}`);
+      if (!['planning', 'working', 'trying', 'thinking'].includes(name.toLowerCase())) {
+        this.memory.mentalModel.userName = name;
+        this.addFact(`User's name is ${name}`);
+      }
+    } else if (iAmMatch && iAmMatch[1]) {
+      const name = iAmMatch[1];
+      if (!['planning', 'working', 'trying', 'thinking'].includes(name.toLowerCase())) {
+        this.memory.mentalModel.userName = name;
+        this.addFact(`User's name is ${name}`);
+      }
     }
 
     // 3. Intention & Goal Extraction (Plans)
