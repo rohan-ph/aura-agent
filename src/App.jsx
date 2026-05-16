@@ -528,8 +528,12 @@ function App() {
       {/* Intelligence Panel (Only visible on Chat tab, otherwise it's in Dashboard) */}
       {activeTab === 'chat' && (
         <aside className="intelligence-panel">
-          <CascadeAudit auditTrail={auditTrail} currentSpend={currentSpend} />
-          <MemoryBank mentalModel={mentalModel} facts={facts} />
+          <div className="intelligence-card-wrapper">
+            <CascadeAudit auditTrail={auditTrail} currentSpend={currentSpend} />
+          </div>
+          <div className="intelligence-card-wrapper">
+            <MemoryBank mentalModel={mentalModel} facts={facts} />
+          </div>
         </aside>
       )}
     </div>
