@@ -58,7 +58,7 @@ const CascadeAudit = ({ auditTrail, currentSpend, facts = [] }) => {
             <div key={i} className="audit-entry-mini fact-entry">
               <div className="fact-content">
                 <span className="fact-dot"></span>
-                <span className="fact-text">{fact.text}</span>
+                <span className="fact-text">{fact.content}</span>
                 <span className="fact-time">{new Date(fact.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
             </div>
