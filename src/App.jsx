@@ -173,7 +173,7 @@ function App() {
     setMessages(prev => [...prev, userMessage]);
     setIsProcessing(true);
 
-    const cascadeflow = new CascadeFlow(userToken);
+    const cascadeflowInstance = new Cascadeflow(1.00);
     
     try {
       // 1. Memory Recall: What do we already know?
@@ -181,11 +181,11 @@ function App() {
       const context = relatedFacts.map(f => f.content).join('\n');
 
       // 2. Intelligence Routing: Which model should answer?
-      const route = cascadeflow.route(content, context);
+      const { config, decision } = cascadeflowInstance.route(content);
       
       // 3. Update Audit Trail immediately
-      setAuditTrail(cascadeflow.getAuditTrail());
-      setCurrentSpend(cascadeflow.getSpend().toString());
+      setAuditTrail(cascadeflowInstance.getAuditTrail());
+      setCurrentSpend(cascadeflowInstance.getSpend().toString());
 
       // 4. Groq Execution
       const groq = new Groq({ apiKey: import.meta.env.VITE_GROQ_API_KEY, dangerouslyAllowBrowser: true });
@@ -195,7 +195,7 @@ function App() {
           ...messages,
           { role: 'user', content }
         ],
-        model: route.model,
+        model: config.id,
       });
 
       const response = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
@@ -229,11 +229,11 @@ function App() {
         if (!activeChatId && !prev.find(c => c.id === 'default')) {
           const defaultChat = { id: 'default', title: content.substring(0, 30) + '...', messages: newMessages, timestamp: new Date() };
           const result = [defaultChat, ...prev];
-          syncToDB(updatedModel, updatedFacts, cascadeflow.getAuditTrail(), cascadeflow.getSpend(), result);
+          syncToDB(updatedModel, updatedFacts, cascadeflowInstance.getAuditTrail(), cascadeflowInstance.getSpend(), result);
           return result;
         }
         
-        syncToDB(updatedModel, updatedFacts, cascadeflow.getAuditTrail(), cascadeflow.getSpend(), updated);
+        syncToDB(updatedModel, updatedFacts, cascadeflowInstance.getAuditTrail(), cascadeflowInstance.getSpend(), updated);
         return updated;
       });
     } catch (error) {
