@@ -308,7 +308,7 @@ function App() {
           change: (parseFloat(item.change) + newChange).toFixed(2) + '%'
         };
       }));
-    }, 5000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);
