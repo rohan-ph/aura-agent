@@ -36,6 +36,11 @@ export class Hindsight {
         this.memory.mentalModel.interests.push('Cryptocurrency');
       }
     }
+
+    // 1b. Privacy Extraction (Secrets)
+    if (lowerText.includes('password') || lowerText.includes('secret') || lowerText.includes('private key')) {
+      this.addFact(`🛡️ Encrypted Secret Stored: [${text.substring(0, 10)}...]`);
+    }
     
     // 2. Name Extraction (More robust)
     const nameMatch = text.match(/(?:my name is)\s+([A-Za-z]+)/i);

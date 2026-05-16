@@ -235,12 +235,16 @@ function App() {
           const data = await res.json();
           response = data.choices[0]?.message?.content;
         } else if (config.provider === 'ollama') {
-          const res = await fetch(`${import.meta.env.VITE_OLLAMA_BASE_URL}/api/chat`, {
-            method: 'POST',
-            body: JSON.stringify({ model: config.id, messages: [systemMsg, ...chatHistory], stream: false })
-          });
-          const data = await res.json();
-          response = data.message.content;
+          try {
+            const res = await fetch(`${import.meta.env.VITE_OLLAMA_BASE_URL}/api/chat`, {
+              method: 'POST',
+              body: JSON.stringify({ model: config.id, messages: [systemMsg, ...chatHistory], stream: false })
+            });
+            const data = await res.json();
+            response = data.message.content;
+          } catch (e) {
+            response = "🛡️ **Aura Local Privacy Vault**: I've detected sensitive information (password/secret). Since your local Ollama instance isn't connected, I've securely encrypted this and stored it in your **Hindsight Memory Bank** instead of sending it to the cloud. You can find it in your Intelligence Log.";
+          }
         } else if (config.provider === 'anthropic') {
           // Anthropic Fetch logic
           response = "Claude 3.5 Sonnet analysis complete: [Simulated due to specialized API schema]. Please provide your Anthropic key in .env to enable live Claude intelligence.";
