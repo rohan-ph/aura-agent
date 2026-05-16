@@ -51,15 +51,19 @@ const CascadeAudit = ({ auditTrail, currentSpend }) => {
 
       <div className="trail-container">
         <div className="trail-header">RECENT LOGS</div>
-        {auditTrail.slice(0, -1).reverse().map((entry, i) => (
-          <div key={i} className="audit-entry-mini">
-            <div className="mini-header">
-              <span className="mini-model" style={{ color: entry.color }}>{entry.modelSelected}</span>
-              <span className="mini-time">{new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        {auditTrail.length <= 1 ? (
+          <div className="empty-logs">Starting session... Previous decisions will appear here.</div>
+        ) : (
+          auditTrail.slice(0, -1).reverse().map((entry, i) => (
+            <div key={i} className="audit-entry-mini">
+              <div className="mini-header">
+                <span className="mini-model" style={{ color: entry.color }}>{entry.modelSelected}</span>
+                <span className="mini-time">{new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              <p className="mini-rationale">{entry.rationale}</p>
             </div>
-            <p className="mini-rationale">{entry.rationale}</p>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );
