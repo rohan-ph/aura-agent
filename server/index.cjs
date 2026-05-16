@@ -11,7 +11,7 @@ const User = require('./models/User.cjs');
 
 const app = express();
 app.use(express.json());
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cors()); // Allow all origins for debugging connectivity
 app.use(session({
   secret: process.env.SESSION_SECRET || 'afa_session_secret',
   resave: false,
@@ -51,11 +51,11 @@ passport.use(new GoogleStrategy({
         });
         await user.save();
       }
-      return done(null, { _id: user._id, email, name, mentalModel: user.mentalModel, facts: user.facts, totalSpend: user.totalSpend, auditTrail: user.auditTrail });
+      return done(null, { _id: user._id, email, name, mentalModel: user.mentalModel, facts: user.facts, totalSpend: user.totalSpend, auditTrail: user.auditTrail, conversations: user.conversations });
     } else {
       // Fallback
       if (!inMemoryUsers[email]) {
-        inMemoryUsers[email] = { email, name, mentalModel: { userName: name, riskProfile: 'Unknown', interests: [] }, facts: [], totalSpend: 0, auditTrail: [] };
+        inMemoryUsers[email] = { email, name, mentalModel: { userName: name, riskProfile: 'Unknown', interests: [] }, facts: [], totalSpend: 0, auditTrail: [], conversations: [] };
       }
       return done(null, inMemoryUsers[email]);
     }
@@ -68,34 +68,58 @@ passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
 
 // ─── Email/Password Auth Routes ─────────────────────────────────────────────
+app.post('/api/auth/signup', async (req, res) => {
+  const { email, password, name } = req.body;
+  try {
+    if (isDbConnected) {
+      let user = await User.findOne({ email });
+      if (user) return res.status(400).json({ message: 'User already exists' });
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      user = new User({ 
+        email, 
+        password: hashedPassword,
+        mentalModel: { userName: name, riskProfile: 'Unknown', interests: [], pastDecisions: [] }
+      });
+      await user.save();
+      
+      const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
+      return res.json({ token, user: { email: user.email, name, mentalModel: user.mentalModel, facts: [], totalSpend: 0, auditTrail: [], conversations: [] } });
+    } else {
+      // Fallback Mode
+      if (inMemoryUsers[email]) return res.status(400).json({ message: 'User already exists' });
+      const hashedPassword = await bcrypt.hash(password, 10);
+      inMemoryUsers[email] = { email, password: hashedPassword, name, mentalModel: { userName: name, riskProfile: 'Unknown', interests: [] }, facts: [], totalSpend: 0, auditTrail: [], conversations: [] };
+      const token = jwt.sign({ userId: `demo_${email}` }, JWT_SECRET, { expiresIn: '7d' });
+      return res.json({ token, user: inMemoryUsers[email] });
+    }
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
   try {
     if (isDbConnected) {
       let user = await User.findOne({ email });
-      if (!user) {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        user = new User({ email, password: hashedPassword });
-        await user.save();
-      } else {
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
-      }
+      if (!user) return res.status(400).json({ message: 'User not found' });
+      
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+      
       const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
-      return res.json({ token, user: { email: user.email, mentalModel: user.mentalModel, facts: user.facts, totalSpend: user.totalSpend, auditTrail: user.auditTrail } });
+      return res.json({ token, user: { email: user.email, mentalModel: user.mentalModel, facts: user.facts, totalSpend: user.totalSpend, auditTrail: user.auditTrail, conversations: user.conversations } });
     } else {
-      // Fallback Mode with password validation
+      // Fallback Mode
       let memUser = inMemoryUsers[email];
-      if (!memUser) {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        inMemoryUsers[email] = { email, password: hashedPassword };
-        memUser = inMemoryUsers[email];
-      } else {
-        const isMatch = await bcrypt.compare(password, memUser.password);
-        if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
-      }
+      if (!memUser) return res.status(400).json({ message: 'User not found' });
+      
+      const isMatch = await bcrypt.compare(password, memUser.password);
+      if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+      
       const token = jwt.sign({ userId: `demo_${email}` }, JWT_SECRET, { expiresIn: '7d' });
-      return res.json({ token, user: { email, mentalModel: { riskProfile: 'Unknown', interests: [], pastDecisions: [] }, facts: [], totalSpend: 0, auditTrail: [] } });
+      return res.json({ token, user: memUser });
     }
   } catch (err) {
     console.error('Login Error:', err);
@@ -119,22 +143,28 @@ app.get('/api/auth/google/callback',
       mentalModel: user.mentalModel || { userName: user.name, riskProfile: 'Unknown', interests: [] },
       facts: user.facts || [],
       totalSpend: user.totalSpend || 0,
-      auditTrail: user.auditTrail || []
+      auditTrail: user.auditTrail || [],
+      conversations: user.conversations || []
     }));
     res.redirect(`http://localhost:5173/?token=${token}&user=${userData}`);
   }
 );
 
-// ─── Data Sync Route ─────────────────────────────────────────────────────────
 app.post('/api/user/sync', async (req, res) => {
-  const { token, mentalModel, facts, auditTrail, totalSpend } = req.body;
+  const { token } = req.body;
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     if (isDbConnected && !String(decoded.userId).startsWith('demo_')) {
-      const user = await User.findByIdAndUpdate(decoded.userId, { mentalModel, facts, auditTrail, totalSpend }, { new: true });
+      const { mentalModel, facts, auditTrail, totalSpend, conversations } = req.body;
+      const user = await User.findByIdAndUpdate(decoded.userId, { mentalModel, facts, auditTrail, totalSpend, conversations }, { new: true });
       return res.json({ message: 'Sync successful', user });
+    } else if (String(decoded.userId).startsWith('demo_')) {
+      const email = String(decoded.userId).replace('demo_', '');
+      const { mentalModel, facts, auditTrail, totalSpend, conversations } = req.body;
+      inMemoryUsers[email] = { ...inMemoryUsers[email], mentalModel, facts, auditTrail, totalSpend, conversations };
+      return res.json({ message: 'Sync successful (Fallback Mode)', user: inMemoryUsers[email] });
     }
-    return res.json({ message: 'Sync simulated (Fallback Mode)' });
+    return res.status(400).json({ message: 'Sync failed' });
   } catch (err) {
     res.status(401).json({ message: 'Unauthorized' });
   }

@@ -14,24 +14,38 @@ const GoogleIcon = () => (
 const LoginPage = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [name, setName] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (isSignUp && password !== confirmPassword) {
+      return setError('Passwords do not match');
+    }
+
     setLoading(true);
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const endpoint = isSignUp ? '/api/auth/signup' : '/api/auth/login';
+    const payload = isSignUp ? { email, password, name } : { email, password };
+
+    console.log(`Attempting to hit: ${apiUrl}${endpoint}`);
+
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+      const response = await fetch(`${apiUrl}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify(payload)
       });
       const data = await response.json();
       if (response.ok) {
         onLogin(data);
       } else {
-        setError(data.message || 'Login failed. Please try again.');
+        setError(data.message || 'Authentication failed. Please try again.');
       }
     } catch (err) {
       setError('Could not connect to server. Make sure the backend is running.');
@@ -52,7 +66,7 @@ const LoginPage = ({ onLogin }) => {
             <Zap size={32} />
           </div>
           <h1>Aura Agent</h1>
-          <p>Secure Access to Your Intelligence Bank</p>
+          <p>{isSignUp ? 'Create your intelligence account' : 'Secure Access to Your Intelligence Bank'}</p>
         </div>
 
         {/* Google Login Button */}
@@ -62,11 +76,24 @@ const LoginPage = ({ onLogin }) => {
         </button>
 
         <div className="login-divider">
-          <span>or continue with email</span>
+          <span>{isSignUp ? 'or register with email' : 'or continue with email'}</span>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
           {error && <div className="login-error">{error}</div>}
+
+          {isSignUp && (
+            <div className="form-group">
+              <label>Full Name</label>
+              <input
+                type="text"
+                placeholder="John Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+          )}
 
           <div className="form-group">
             <label>Email Address</label>
@@ -78,8 +105,9 @@ const LoginPage = ({ onLogin }) => {
               required
             />
           </div>
+
           <div className="form-group">
-            <label>Master Password</label>
+            <label>{isSignUp ? 'Create Password' : 'Master Password'}</label>
             <input
               type="password"
               placeholder="••••••••"
@@ -89,10 +117,31 @@ const LoginPage = ({ onLogin }) => {
             />
           </div>
 
+          {isSignUp && (
+            <div className="form-group">
+              <label>Confirm Password</label>
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+          )}
+
           <button type="submit" className="login-button" disabled={loading}>
-            {loading ? 'Authenticating...' : <><span>Launch Agent</span> <ArrowRight size={18} /></>}
+            {loading ? 'Authenticating...' : <><span>{isSignUp ? 'Create Account' : 'Launch Agent'}</span> <ArrowRight size={18} /></>}
           </button>
         </form>
+
+        <div className="auth-toggle">
+          {isSignUp ? (
+            <p>Already have an account? <span onClick={() => setIsSignUp(false)}>Login here</span></p>
+          ) : (
+            <p>Don't have an account? <span onClick={() => setIsSignUp(true)}>Sign up here</span></p>
+          )}
+        </div>
 
         <div className="login-footer">
           <div className="security-note">

@@ -21,7 +21,17 @@ const UserSchema = new mongoose.Schema({
     timestamp: { type: Date, default: Date.now },
     color: String
   }],
-  totalSpend: { type: Number, default: 0 }
+  totalSpend: { type: Number, default: 0 },
+  conversations: [{
+    id: { type: String, required: true },
+    title: String,
+    messages: [{
+      role: String,
+      content: String,
+      timestamp: { type: Date, default: Date.now }
+    }],
+    timestamp: { type: Date, default: Date.now }
+  }]
 });
 
 module.exports = mongoose.model('User', UserSchema);

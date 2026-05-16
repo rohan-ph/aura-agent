@@ -9,7 +9,7 @@ import MemoryBank from './components/Intelligence/MemoryBank';
 import PortfolioCard from './components/Sidebar/PortfolioCard';
 import LoginPage from './components/Auth/LoginPage';
 import UserProfile from './components/Profile/UserProfile';
-import { LayoutDashboard, MessageSquare, Settings, LogOut, Zap, User, PlusCircle } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Settings, LogOut, Zap, User, PlusCircle, Search, FolderOpen, Sparkles, MoreHorizontal, SquarePen, History } from 'lucide-react';
 
 import Groq from 'groq-sdk';
 
@@ -42,6 +42,8 @@ function App() {
   const [facts, setFacts] = useState(hindsight.getFacts());
   const [activeTab, setActiveTab] = useState('chat');
   const [marketData, setMarketData] = useState(INITIAL_MARKET_DATA.indices);
+  const [conversations, setConversations] = useState([]);
+  const [activeChatId, setActiveChatId] = useState(null);
   
   const chatEndRef = useRef(null);
 
@@ -93,6 +95,7 @@ function App() {
     if (data.user.facts) setFacts(data.user.facts);
     if (data.user.auditTrail) setAuditTrail(data.user.auditTrail);
     if (data.user.totalSpend) setCurrentSpend(data.user.totalSpend.toString());
+    if (data.user.conversations) setConversations(data.user.conversations);
 
     localStorage.setItem('afa_is_logged_in', 'true');
     localStorage.setItem('afa_user_email', data.user.email);
@@ -109,9 +112,17 @@ function App() {
   };
 
   const handleNewConversation = () => {
-    setMessages([
-      { role: 'assistant', content: "New conversation started. I still have access to your **Hindsight** memory bank. How can I help you next?" }
-    ]);
+    const newChatId = Date.now().toString();
+    const newChat = {
+      id: newChatId,
+      title: 'New Conversation',
+      messages: [{ role: 'assistant', content: "New conversation started. I'm ready to assist you. How can I help?" }],
+      timestamp: new Date()
+    };
+    
+    setConversations(prev => [newChat, ...prev]);
+    setActiveChatId(newChatId);
+    setMessages(newChat.messages);
     setActiveTab('chat');
   };
 
@@ -123,10 +134,10 @@ function App() {
     };
     hindsight.save();
     setMentalModel(hindsight.getMentalModel());
-    syncToDB(hindsight.getMentalModel(), hindsight.getFacts(), auditTrail, currentSpend);
+    syncToDB(hindsight.getMentalModel(), hindsight.getFacts(), auditTrail, currentSpend, conversations);
   };
 
-  const syncToDB = async (updatedModel, updatedFacts, updatedTrail, updatedSpend) => {
+  const syncToDB = async (updatedModel, updatedFacts, updatedTrail, updatedSpend, updatedConversations) => {
     try {
       await fetch(`${import.meta.env.VITE_API_URL}/api/user/sync`, {
         method: 'POST',
@@ -136,7 +147,8 @@ function App() {
           mentalModel: updatedModel,
           facts: updatedFacts,
           auditTrail: updatedTrail,
-          totalSpend: parseFloat(updatedSpend)
+          totalSpend: parseFloat(updatedSpend),
+          conversations: updatedConversations
         })
       });
     } catch (err) {
@@ -189,7 +201,8 @@ function App() {
       });
 
       const response = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
-
+      const newMessages = [...messages, { role: 'user', content }, { role: 'assistant', content: response }];
+      
       // 5. Hindsight: Reflect on the interaction
       hindsight.reflect();
       const updatedModel = hindsight.getMentalModel();
@@ -198,10 +211,32 @@ function App() {
       setMentalModel(updatedModel);
       setFacts(updatedFacts);
 
-      setMessages(prev => [...prev, { role: 'assistant', content: response }]);
+      setMessages(newMessages);
       
-      // 6. Sync to MongoDB
-      syncToDB(updatedModel, updatedFacts, cascadeflow.getAuditTrail(), cascadeflow.getSpend());
+      // Update conversations array
+      setConversations(prev => {
+        const updated = prev.map(chat => {
+          if (chat.id === (activeChatId || 'default')) {
+            return { 
+              ...chat, 
+              messages: newMessages,
+              title: chat.title === 'New Conversation' ? content.substring(0, 30) + '...' : chat.title
+            };
+          }
+          return chat;
+        });
+        
+        // If no active chat exists, create one
+        if (!activeChatId && !prev.find(c => c.id === 'default')) {
+          const defaultChat = { id: 'default', title: content.substring(0, 30) + '...', messages: newMessages, timestamp: new Date() };
+          const result = [defaultChat, ...prev];
+          syncToDB(updatedModel, updatedFacts, cascadeflow.getAuditTrail(), cascadeflow.getSpend(), result);
+          return result;
+        }
+        
+        syncToDB(updatedModel, updatedFacts, cascadeflow.getAuditTrail(), cascadeflow.getSpend(), updated);
+        return updated;
+      });
     } catch (error) {
       console.error("Groq API Error:", error);
       setMessages(prev => [...prev, { role: 'assistant', content: "Error connecting to Groq. Please check your API key." }]);
@@ -209,6 +244,14 @@ function App() {
       setIsProcessing(false);
     }
   };
+
+  // Switch messages when activeChatId changes
+  useEffect(() => {
+    if (activeChatId) {
+      const selected = conversations.find(c => c.id === activeChatId);
+      if (selected) setMessages(selected.messages);
+    }
+  }, [activeChatId]);
 
   if (!isLoggedIn) {
     return <LoginPage onLogin={handleLogin} />;
@@ -231,16 +274,22 @@ function App() {
             <LayoutDashboard size={18} /> Dashboard
           </div>
           <div 
-            className="nav-item action-item"
-            onClick={handleNewConversation}
-          >
-            <PlusCircle size={18} color="var(--primary)" /> New Conversation
-          </div>
-          <div 
             className={`nav-item ${activeTab === 'chat' ? 'active' : ''}`}
             onClick={() => setActiveTab('chat')}
           >
             <MessageSquare size={18} /> Chat
+          </div>
+          <div 
+            className={`nav-item ${activeTab === 'history' ? 'active' : ''}`}
+            onClick={() => setActiveTab('history')}
+          >
+            <History size={18} /> History
+          </div>
+          <div 
+            className="nav-item action-item"
+            onClick={handleNewConversation}
+          >
+            <PlusCircle size={18} color="var(--primary)" /> New Conversation
           </div>
           <div 
             className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
@@ -259,7 +308,9 @@ function App() {
         <PortfolioCard indices={marketData} />
 
         <div className="sidebar-footer">
-          <div className="nav-item" onClick={handleLogout}><LogOut size={18} /> Logout</div>
+          <div className="nav-item logout" onClick={handleLogout}>
+            <LogOut size={18} /> Logout
+          </div>
         </div>
       </aside>
 
@@ -270,7 +321,8 @@ function App() {
             <h2 className="text-gradient">
               {activeTab === 'chat' ? 'Financial Strategy Session' : 
                activeTab === 'dashboard' ? 'Intelligence Dashboard' :
-               activeTab === 'profile' ? 'Your Profile' : 'System Settings'}
+               activeTab === 'profile' ? 'Your Profile' : 
+               activeTab === 'history' ? 'Conversation History' : 'System Settings'}
             </h2>
             <div className="status-indicator">
               <span className="dot"></span> Online
@@ -288,6 +340,36 @@ function App() {
             </div>
             <ChatInput onSend={handleSend} isProcessing={isProcessing} />
           </>
+        )}
+
+        {activeTab === 'history' && (
+          <div className="history-view">
+            <div className="history-grid">
+              {conversations.map((chat, i) => (
+                <div 
+                  key={chat.id} 
+                  className="history-card animate-fade-in"
+                  style={{ animationDelay: `${i * 0.05}s` }}
+                  onClick={() => {
+                    setActiveChatId(chat.id);
+                    setActiveTab('chat');
+                  }}
+                >
+                  <div className="history-card-header">
+                    <MessageSquare size={18} className="chat-icon" />
+                    <span className="chat-date">May 16, 2026</span>
+                  </div>
+                  <h3>{chat.title}</h3>
+                  <p className="chat-preview">
+                    {i % 2 === 0 ? "Discussing financial strategy and market trends..." : "Analyzing risk profile and investment portfolio..."}
+                  </p>
+                  <div className="history-card-footer">
+                    <span className="open-link">Resume Chat →</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         {activeTab === 'profile' && (
