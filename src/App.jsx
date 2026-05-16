@@ -197,12 +197,11 @@ function App() {
         - Risk Profile: ${mentalModel.riskProfile}
         - Interests: ${mentalModel.interests.join(', ')}
         
-        LONG-TERM MEMORY (RECALLED FACTS):
-        ${context || 'No specific facts recalled for this query, but you know the user from previous sessions.'}
+        LONG-TERM MEMORY (HINDSIGHT BANK):
+        ${context || 'No specific facts recalled for this specific query, but always refer to the user by their name and acknowledge their known profile.'}
         
-        MISSION:
-        Provide personalized, data-driven financial advice. Reference the user's name and past history naturally.
-        Never claim you don't remember them; you have full access to their Hindsight Memory Bank.
+        CRITICAL INSTRUCTION:
+        This is a continuous intelligence session. Even if this specific chat window is new, you must use the Hindsight Bank above to "remember" the user's previous goals, names, and plans. Never act like a "new" assistant. If you see plans in the memory, reference them immediately.
       `;
 
       const completion = await groq.chat.completions.create({

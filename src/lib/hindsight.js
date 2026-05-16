@@ -26,34 +26,41 @@ export class Hindsight {
   }
 
   retain(interaction) {
-    // Simulated entity extraction
-    const text = interaction.content.toLowerCase();
+    const text = interaction.content;
+    const lowerText = text.toLowerCase();
     
-    if (text.includes('crypto') || text.includes('binance')) {
+    // 1. Specific Entity Extraction (Existing)
+    if (lowerText.includes('crypto') || lowerText.includes('binance')) {
       this.addFact('User has experience with crypto (Binance)');
       if (!this.memory.mentalModel.interests.includes('Cryptocurrency')) {
         this.memory.mentalModel.interests.push('Cryptocurrency');
       }
     }
     
-    // Name extraction: "I am Rohan" or "My name is Rohan"
-    const nameMatch = interaction.content.match(/(?:i am|my name is)\s+([A-Za-z]+)/i);
+    // 2. Name Extraction
+    const nameMatch = text.match(/(?:i am|my name is)\s+([A-Za-z]+)/i);
     if (nameMatch && nameMatch[1]) {
       const name = nameMatch[1];
       this.memory.mentalModel.userName = name;
       this.addFact(`User's name is ${name}`);
     }
 
-    if (text.includes('invest') && (text.includes('start') || text.includes('new'))) {
-      this.addFact('User is looking to start a new investment journey');
+    // 3. Intention & Goal Extraction (Plans)
+    if (lowerText.includes('plan') || lowerText.includes('goal') || lowerText.includes('want to') || lowerText.includes('going to')) {
+      this.addFact(`User mentioned a plan/goal: "${text}"`);
     }
 
-    // Risk profile detection — order matters (check medium before high/low to avoid substring conflicts)
-    if (text.includes('medium risk') || text.includes('moderate risk') || text.includes('risk') && text.includes('medium') || text.includes('risk') && text.includes('moderate')) {
+    // 4. Financial Context Extraction
+    if (lowerText.includes('invest') || lowerText.includes('save') || lowerText.includes('portfolio')) {
+      this.addFact(`User is discussing: ${text.substring(0, 50)}...`);
+    }
+
+    // 5. Risk Profile Detection
+    if (lowerText.includes('medium risk') || lowerText.includes('moderate risk')) {
       this.memory.mentalModel.riskProfile = 'Medium';
-    } else if (text.includes('high risk') || (text.includes('risk') && text.includes('high'))) {
+    } else if (lowerText.includes('high risk')) {
       this.memory.mentalModel.riskProfile = 'High';
-    } else if (text.includes('low risk') || (text.includes('risk') && text.includes('low'))) {
+    } else if (lowerText.includes('low risk')) {
       this.memory.mentalModel.riskProfile = 'Low';
     }
 
