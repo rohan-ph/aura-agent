@@ -294,6 +294,25 @@ function App() {
     }
   }, [activeChatId]);
 
+  // Real-time Market Pulse Update (5s interval)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMarketData(prevData => prevData.map(item => {
+        const fluctuation = (Math.random() - 0.5) * 20; // Fluctuate by +/- 10 points
+        const newValue = parseFloat(item.value.replace(/,/g, '')) + fluctuation;
+        const newChange = (fluctuation / newValue) * 100;
+        
+        return {
+          ...item,
+          value: newValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+          change: (parseFloat(item.change) + newChange).toFixed(2) + '%'
+        };
+      }));
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   if (!isLoggedIn) {
     return <LoginPage onLogin={handleLogin} />;
   }
