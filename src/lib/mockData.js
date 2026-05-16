@@ -14,20 +14,38 @@ export const INITIAL_MARKET_DATA = {
 export const MODEL_CONFIGS = [
   {
     id: 'llama-3.1-8b-instant',
-    name: 'Groq/Llama-3.1-8b',
+    name: 'Llama 3.1 8B (Turbo)',
     type: 'fast',
     costPerQuery: 0.00005,
-    avgLatency: 50,
+    avgLatency: 40,
     capability: 'Fast factual retrieval',
     color: '#238636'
   },
   {
+    id: 'mixtral-8x7b-32768',
+    name: 'Mixtral 8x7B (Balanced)',
+    type: 'balanced',
+    costPerQuery: 0.0002,
+    avgLatency: 120,
+    capability: 'Creative & Logical reasoning',
+    color: '#d29922'
+  },
+  {
     id: 'llama-3.3-70b-versatile',
-    name: 'Groq/Llama-3.3-70b',
+    name: 'Llama 3.3 70B (Ultra)',
     type: 'power',
     costPerQuery: 0.0006,
-    avgLatency: 200,
-    capability: 'Deep reasoning & analysis',
+    avgLatency: 250,
+    capability: 'Deep reasoning & complex analysis',
     color: '#1f6feb'
+  },
+  {
+    id: 'gemma2-9b-it',
+    name: 'Gemma 2 9B (Smart)',
+    type: 'creative',
+    costPerQuery: 0.0001,
+    avgLatency: 80,
+    capability: 'Nuanced & Friendly responses',
+    color: '#8b5cf6'
   }
 ];

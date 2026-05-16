@@ -9,17 +9,30 @@ export class Cascadeflow {
 
   route(query) {
     const complexity = this.analyzeComplexity(query);
+    const q = query.toLowerCase();
     
     // Budget enforcement
     if (this.currentSpend >= this.budgetLimit) {
-      return this.selectModel('llama-3.1-8b-instant', 'Budget limit exceeded. Switching to cheapest model.');
+      return this.selectModel('llama-3.1-8b-instant', 'Budget limit exceeded. Switching to turbo model.');
     }
 
-    if (complexity > 7) {
-      return this.selectModel('llama-3.3-70b-versatile', 'High complexity detected: Requires multi-step reasoning.');
-    } else {
-      return this.selectModel('llama-3.1-8b-instant', 'Low complexity: Factual retrieval/summary sufficient.');
+    // Friendly/Casual queries -> Gemma
+    if (q.includes('hello') || q.includes('hi ') || q.includes('how are you') || q.includes('who are you')) {
+      return this.selectModel('gemma2-9b-it', 'Casual interaction: Optimizing for friendly tone.');
     }
+
+    // High complexity -> Llama 70B
+    if (complexity > 10) {
+      return this.selectModel('llama-3.3-70b-versatile', 'Ultra-high complexity: Requires deep financial analysis.');
+    } 
+    
+    // Medium complexity -> Mixtral
+    if (complexity > 5) {
+      return this.selectModel('mixtral-8x7b-32768', 'Balanced complexity: Using Mixtral for logical reasoning.');
+    }
+
+    // Default -> Llama 8B
+    return this.selectModel('llama-3.1-8b-instant', 'Standard query: Factual retrieval sufficient.');
   }
 
   analyzeComplexity(query) {
