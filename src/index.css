@@ -427,6 +427,46 @@ h1, h2, h3 {
   font-size: 0.7rem;
 }
 
+.onboarding-text {
+  color: var(--secondary);
+  font-size: 0.85rem;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.onboarding-tips {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.onboarding-tips p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.onboarding-tips ul {
+  list-style: none;
+  padding: 0;
+}
+
+.onboarding-tips li {
+  font-size: 0.8rem;
+  color: var(--secondary);
+  margin-bottom: 0.4rem;
+  padding-left: 0.8rem;
+  position: relative;
+}
+
+.onboarding-tips li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  opacity: 0.6;
+}
+
 .empty-state {
   text-align: center;
   color: var(--text-muted);

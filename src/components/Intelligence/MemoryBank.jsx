@@ -14,17 +14,21 @@ const MemoryBank = ({ mentalModel, facts }) => {
           <ShieldCheck size={16} />
           <div className="model-info">
             <div className="label">Risk Profile</div>
-            <div className="value">{mentalModel.riskProfile}</div>
+            <div className="value">
+              {mentalModel.riskProfile === 'Unknown' ? (
+                <span className="onboarding-text">Chat to define strategy</span>
+              ) : mentalModel.riskProfile}
+            </div>
           </div>
         </div>
         <div className="model-row">
           <Zap size={16} />
           <div className="model-info">
-            <div className="label">Interests</div>
+            <div className="label">Focus Areas</div>
             <div className="value">
               {mentalModel.interests.length > 0 
                 ? mentalModel.interests.join(', ') 
-                : 'Learning...'}
+                : <span className="onboarding-text">Analyzing your interests...</span>}
             </div>
           </div>
         </div>
@@ -33,16 +37,23 @@ const MemoryBank = ({ mentalModel, facts }) => {
       <div className="facts-container">
         <div className="sub-header">
           <Database size={14} />
-          <span>Retained Facts</span>
+          <span>Intelligence Log</span>
         </div>
         {facts.length === 0 ? (
-          <div className="empty-state">No facts retained yet.</div>
+          <div className="onboarding-tips">
+            <p>Aura is learning from you. Try saying:</p>
+            <ul>
+              <li>"I'm a conservative investor"</li>
+              <li>"I'm interested in AI stocks"</li>
+              <li>"Remind me to check Nifty at 10am"</li>
+            </ul>
+          </div>
         ) : (
           facts.map((fact, i) => (
             <div key={i} className="fact-item animate-fade-in">
               <div className="fact-dot" />
               <div className="fact-content">{fact.content}</div>
-              <div className="fact-time">{new Date(fact.timestamp).toLocaleTimeString()}</div>
+              <div className="fact-time">{new Date(fact.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
             </div>
           ))
         )}
