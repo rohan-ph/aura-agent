@@ -467,6 +467,102 @@ h1, h2, h3 {
   opacity: 0.6;
 }
 
+.latest-decision-box {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-top: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.box-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.box-main {
+  margin-bottom: 1rem;
+}
+
+.brain-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brain-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.brain-subtitle {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.box-rationale {
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.box-metrics {
+  display: flex;
+  gap: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 0.75rem;
+}
+
+.metric-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.trail-header {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin: 1.5rem 0 1rem 0;
+}
+
+.audit-entry-mini {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mini-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.mini-model {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.mini-time {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.mini-rationale {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
 .empty-state {
   text-align: center;
   color: var(--text-muted);
