@@ -150,23 +150,43 @@ app.get('/api/auth/google/callback',
   }
 );
 
+// ─── Data Sync Route ─────────────────────────────────────────────────────────
 app.post('/api/user/sync', async (req, res) => {
-  const { token } = req.body;
+  const { token, mentalModel, facts, auditTrail, totalSpend, conversations } = req.body;
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     if (isDbConnected && !String(decoded.userId).startsWith('demo_')) {
-      const { mentalModel, facts, auditTrail, totalSpend, conversations } = req.body;
       const user = await User.findByIdAndUpdate(decoded.userId, { mentalModel, facts, auditTrail, totalSpend, conversations }, { new: true });
       return res.json({ message: 'Sync successful', user });
     } else if (String(decoded.userId).startsWith('demo_')) {
       const email = String(decoded.userId).replace('demo_', '');
-      const { mentalModel, facts, auditTrail, totalSpend, conversations } = req.body;
       inMemoryUsers[email] = { ...inMemoryUsers[email], mentalModel, facts, auditTrail, totalSpend, conversations };
       return res.json({ message: 'Sync successful (Fallback Mode)', user: inMemoryUsers[email] });
     }
     return res.status(400).json({ message: 'Sync failed' });
   } catch (err) {
     res.status(401).json({ message: 'Unauthorized' });
+  }
+});
+
+// ─── Profile Route ───────────────────────────────────────────────────────────
+app.get('/api/user/me', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ message: 'No token' });
+  
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (isDbConnected && !String(decoded.userId).startsWith('demo_')) {
+      const user = await User.findById(decoded.userId);
+      return res.json({ user });
+    } else if (String(decoded.userId).startsWith('demo_')) {
+      const email = String(decoded.userId).replace('demo_', '');
+      return res.json({ user: inMemoryUsers[email] });
+    }
+    res.status(404).json({ message: 'User not found' });
+  } catch (err) {
+    res.status(401).json({ message: 'Invalid token' });
   }
 });
 

@@ -13,9 +13,7 @@ import { LayoutDashboard, MessageSquare, Settings, LogOut, Zap, User, PlusCircle
 
 import Groq from 'groq-sdk';
 
-// Initialize instances
-const hindsight = new Hindsight();
-const cascadeflow = new Cascadeflow(1.00); // $1.00 budget
+// Initialize Groq instance
 const groq = new Groq({
   apiKey: import.meta.env.VITE_GROQ_API_KEY,
   dangerouslyAllowBrowser: true // Essential for this demo
@@ -38,12 +36,15 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [auditTrail, setAuditTrail] = useState([]);
   const [currentSpend, setCurrentSpend] = useState("0.0000");
-  const [mentalModel, setMentalModel] = useState(hindsight.getMentalModel());
-  const [facts, setFacts] = useState(hindsight.getFacts());
+  const [mentalModel, setMentalModel] = useState({ riskProfile: 'Unknown', interests: [], pastDecisions: [] });
+  const [facts, setFacts] = useState([]);
   const [activeTab, setActiveTab] = useState('chat');
   const [marketData, setMarketData] = useState(INITIAL_MARKET_DATA.indices);
   const [conversations, setConversations] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
+  
+  // Initialize hindsight with user email if logged in
+  const [hindsightInstance, setHindsightInstance] = useState(() => new Hindsight(localStorage.getItem('afa_user_email') || 'guest'));
   
   const chatEndRef = useRef(null);
 
@@ -93,6 +94,12 @@ function App() {
     // Update local state with DB data
     if (data.user.mentalModel) setMentalModel(data.user.mentalModel);
     if (data.user.facts) setFacts(data.user.facts);
+    const newHindsight = new Hindsight(data.user.email);
+    newHindsight.hydrate(data.user);
+    setHindsightInstance(newHindsight);
+    setMentalModel(newHindsight.getMentalModel());
+    setFacts(newHindsight.getFacts());
+    
     if (data.user.auditTrail) setAuditTrail(data.user.auditTrail);
     if (data.user.totalSpend) setCurrentSpend(data.user.totalSpend.toString());
     if (data.user.conversations) setConversations(data.user.conversations);
@@ -128,16 +135,17 @@ function App() {
 
   const handleUpdateProfile = (formData) => {
     // Directly update hindsight mental model with user-provided values
-    hindsight.memory.mentalModel = {
-      ...hindsight.getMentalModel(),
+    hindsightInstance.memory.mentalModel = {
+      ...hindsightInstance.getMentalModel(),
       ...formData,
     };
-    hindsight.save();
-    setMentalModel(hindsight.getMentalModel());
-    syncToDB(hindsight.getMentalModel(), hindsight.getFacts(), auditTrail, currentSpend, conversations);
+    hindsightInstance.save();
+    setMentalModel(hindsightInstance.getMentalModel());
+    syncToDB(hindsightInstance.getMentalModel(), hindsightInstance.getFacts(), auditTrail, currentSpend, conversations);
   };
 
   const syncToDB = async (updatedModel, updatedFacts, updatedTrail, updatedSpend, updatedConversations) => {
+    if (!userToken) return;
     try {
       await fetch(`${import.meta.env.VITE_API_URL}/api/user/sync`, {
         method: 'POST',
@@ -165,49 +173,40 @@ function App() {
     setMessages(prev => [...prev, userMessage]);
     setIsProcessing(true);
 
+    const cascadeflow = new CascadeFlow(userToken);
+    
     try {
-      // 1. Cascadeflow: Route and select model
-      const { config, decision } = cascadeflow.route(content);
-      setAuditTrail(cascadeflow.getAuditTrail());
-      setCurrentSpend(cascadeflow.getSpend());
+      // 1. Memory Recall: What do we already know?
+      const relatedFacts = hindsightInstance.recall(content);
+      const context = relatedFacts.map(f => f.content).join('\n');
 
-      // 2. Hindsight: Retain facts and recall context
-      hindsight.retain(userMessage);
-      const recalledFacts = hindsight.recall(content);
-      const model = hindsight.getMentalModel();
+      // 2. Intelligence Routing: Which model should answer?
+      const route = cascadeflow.route(content, context);
       
-      // 3. Construct Contextual Prompt
-      const systemPrompt = `
-        You are an Adaptive Financial Analysis Agent. 
-        User Name: ${model.userName || 'Valued User'}
-        Current User Context: ${JSON.stringify(model)}
-        Recalled Facts: ${JSON.stringify(recalledFacts)}
-        
-        Guidelines:
-        - Be professional and data-driven.
-        - Reference the user's name if known: ${model.userName || 'the user'}.
-        - Reference the user's past history (e.g. crypto experience) if relevant.
-        - If the user asks about risk, acknowledge their current risk profile: ${model.riskProfile}.
-      `;
+      // 3. Update Audit Trail immediately
+      setAuditTrail(cascadeflow.getAuditTrail());
+      setCurrentSpend(cascadeflow.getSpend().toString());
 
-      // 4. Call Real Groq API
+      // 4. Groq Execution
+      const groq = new Groq({ apiKey: import.meta.env.VITE_GROQ_API_KEY, dangerouslyAllowBrowser: true });
       const completion = await groq.chat.completions.create({
         messages: [
-          { role: "system", content: systemPrompt },
-          ...messages.map(m => ({ role: m.role, content: m.content })),
-          { role: "user", content: content }
+          { role: 'system', content: `You are Aura Agent, a premium financial assistant. User Context:\n${context}` },
+          ...messages,
+          { role: 'user', content }
         ],
-        model: config.id,
+        model: route.model,
       });
 
       const response = completion.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
       const newMessages = [...messages, { role: 'user', content }, { role: 'assistant', content: response }];
       
       // 5. Hindsight: Reflect on the interaction
-      hindsight.reflect();
-      const updatedModel = hindsight.getMentalModel();
-      const updatedFacts = hindsight.getFacts();
-      
+      hindsightInstance.retain({ role: 'user', content });
+      hindsightInstance.reflect();
+      const updatedModel = hindsightInstance.getMentalModel();
+      const updatedFacts = hindsightInstance.getFacts();
+
       setMentalModel(updatedModel);
       setFacts(updatedFacts);
 
@@ -244,6 +243,33 @@ function App() {
       setIsProcessing(false);
     }
   };
+
+  // Load user data on mount if already logged in
+  useEffect(() => {
+    const hydrateSession = async () => {
+      if (isLoggedIn && userToken) {
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/me`, {
+            headers: { 'Authorization': `Bearer ${userToken}` }
+          });
+          const data = await response.json();
+          if (response.ok && data.user) {
+            const hydratedHindsight = new Hindsight(data.user.email);
+            hydratedHindsight.hydrate(data.user);
+            setHindsightInstance(hydratedHindsight);
+            setMentalModel(hydratedHindsight.getMentalModel());
+            setFacts(hydratedHindsight.getFacts());
+            if (data.user.conversations) setConversations(data.user.conversations);
+            if (data.user.auditTrail) setAuditTrail(data.user.auditTrail);
+            if (data.user.totalSpend) setCurrentSpend(data.user.totalSpend.toString());
+          }
+        } catch (err) {
+          console.error('Failed to hydrate session:', err);
+        }
+      }
+    };
+    hydrateSession();
+  }, []);
 
   // Switch messages when activeChatId changes
   useEffect(() => {

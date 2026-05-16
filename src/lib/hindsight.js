@@ -1,6 +1,7 @@
 export class Hindsight {
-  constructor() {
-    this.storageKey = 'hindsight_memory_bank';
+  constructor(userEmail = 'guest') {
+    this.userEmail = userEmail;
+    this.storageKey = `hindsight_memory_${userEmail}`;
     this.memory = JSON.parse(localStorage.getItem(this.storageKey)) || {
       facts: [],
       preferences: {},
@@ -10,6 +11,14 @@ export class Hindsight {
         pastDecisions: []
       }
     };
+  }
+
+  hydrate(data) {
+    if (data) {
+      this.memory.mentalModel = data.mentalModel || this.memory.mentalModel;
+      this.memory.facts = data.facts || this.memory.facts;
+      this.save();
+    }
   }
 
   save() {
