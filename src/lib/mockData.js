@@ -33,6 +33,16 @@ export const MODEL_CONFIGS = [
     color: '#10a37f'
   },
   {
+    id: 'gpt-4o',
+    name: 'OpenAI: GPT-4o',
+    provider: 'openai',
+    type: 'power',
+    costPerQuery: 0.005,
+    avgLatency: 450,
+    capability: 'Complex financial reasoning',
+    color: '#008080'
+  },
+  {
     id: 'claude-3-5-sonnet-20240620',
     name: 'Anthropic: Claude 3.5 Sonnet',
     provider: 'anthropic',
@@ -41,6 +51,16 @@ export const MODEL_CONFIGS = [
     avgLatency: 400,
     capability: 'Deep regulatory analysis',
     color: '#d97757'
+  },
+  {
+    id: 'gemini-1.5-pro',
+    name: 'Google: Gemini 1.5 Pro',
+    provider: 'google',
+    type: 'power',
+    costPerQuery: 0.00125,
+    avgLatency: 350,
+    capability: 'Deep multimodal & Data analysis',
+    color: '#4285f4'
   },
   {
     id: 'llama3',

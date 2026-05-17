@@ -9,7 +9,7 @@ import MemoryBank from './components/Intelligence/MemoryBank';
 import PortfolioCard from './components/Sidebar/PortfolioCard';
 import LoginPage from './components/Auth/LoginPage';
 import UserProfile from './components/Profile/UserProfile';
-import { LayoutDashboard, MessageSquare, Settings, LogOut, Zap, User, PlusCircle, Search, FolderOpen, Sparkles, MoreHorizontal, SquarePen, History } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Settings, LogOut, Zap, User, PlusCircle, Search, FolderOpen, Sparkles, MoreHorizontal, SquarePen, History, Trash2 } from 'lucide-react';
 
 import Groq from 'groq-sdk';
 
@@ -139,6 +139,21 @@ function App() {
     setActiveTab('chat');
   };
 
+  const handleDeleteConversation = (e, chatId) => {
+    e.stopPropagation();
+    if (window.confirm("Are you sure you want to delete this conversation?")) {
+      setConversations(prev => {
+        const updated = prev.filter(c => c.id !== chatId);
+        syncToDB(mentalModel, facts, auditTrail, currentSpend, updated);
+        return updated;
+      });
+      if (activeChatId === chatId) {
+        setActiveChatId(null);
+        setMessages([{ role: 'assistant', content: "Welcome back to your **Aura Agent**. I'm now connected to **Groq Cloud**. How can I assist you today?" }]);
+      }
+    }
+  };
+
   const handleUpdateProfile = (formData) => {
     // Directly update hindsight mental model with user-provided values
     hindsightInstance.memory.mentalModel = {
@@ -240,6 +255,20 @@ function App() {
           });
           const data = await res.json();
           response = data.choices[0]?.message?.content;
+        } else if (config.provider === 'google') {
+          const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+          const baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai';
+
+          const res = await fetch(`${baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers: { 
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ model: config.id, messages: [systemMsg, ...chatHistory] })
+          });
+          const data = await res.json();
+          response = data.choices[0]?.message?.content;
         } else if (config.provider === 'ollama') {
           try {
             const res = await fetch(`${import.meta.env.VITE_OLLAMA_BASE_URL}/api/chat`, {
@@ -252,16 +281,49 @@ function App() {
             response = "🛡️ **Aura Local Privacy Vault**: I've detected sensitive information (password/secret). Since your local Ollama instance isn't connected, I've securely encrypted this and stored it in your **Hindsight Memory Bank** instead of sending it to the cloud. You can find it in your Intelligence Log.";
           }
         } else if (config.provider === 'anthropic') {
-          // Anthropic Fetch logic
-          response = "Claude 3.5 Sonnet analysis complete: [Simulated due to specialized API schema]. Please provide your Anthropic key in .env to enable live Claude intelligence.";
+          const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+          // Note: Anthropic API directly from the browser typically fails due to CORS.
+          // Our robust fallback will catch this and use GPT-4o-mini/GPT-4o instead!
+          const res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01',
+              'content-type': 'application/json',
+              'dangerously-allow-browser': 'true'
+            },
+            body: JSON.stringify({
+              model: config.id,
+              max_tokens: 1024,
+              messages: chatHistory.map(m => ({ role: m.role, content: m.content })),
+              system: systemPrompt
+            })
+          });
+          const data = await res.json();
+          response = data.content[0]?.text;
         }
       } catch (err) {
-        console.warn(`Provider ${config.provider} failed, falling back to Groq Llama 8B.`);
-        const groqRes = await groq.chat.completions.create({
-          messages: [systemMsg, ...chatHistory],
-          model: 'llama-3.1-8b-instant'
-        });
-        response = groqRes.choices[0]?.message?.content;
+        console.warn(`Provider ${config.provider} failed, falling back:`, err);
+        try {
+          // If a premium model fails, try to fall back to GPT-4o-mini first
+          const fallbackRes = await fetch(`https://api.openai.com/v1/chat/completions`, {
+            method: 'POST',
+            headers: { 
+              'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ model: 'gpt-4o-mini', messages: [systemMsg, ...chatHistory] })
+          });
+          const data = await fallbackRes.json();
+          response = data.choices[0]?.message?.content;
+        } catch (openaiErr) {
+          // Ultimate fallback to Groq Llama 3.1 8B
+          const groqRes = await groq.chat.completions.create({
+            messages: [systemMsg, ...chatHistory],
+            model: 'llama-3.1-8b-instant'
+          });
+          response = groqRes.choices[0]?.message?.content;
+        }
       }
 
       if (!response) response = "I'm sorry, I couldn't generate a response.";
@@ -468,7 +530,16 @@ function App() {
                 >
                   <div className="history-card-header">
                     <MessageSquare size={18} className="chat-icon" />
-                    <span className="chat-date">May 16, 2026</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <span className="chat-date">{new Date(chat.timestamp || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      <div 
+                        onClick={(e) => handleDeleteConversation(e, chat.id)}
+                        style={{ cursor: 'pointer', color: '#f85149', display: 'flex', alignItems: 'center' }}
+                        title="Delete Conversation"
+                      >
+                        <Trash2 size={16} />
+                      </div>
+                    </div>
                   </div>
                   <h3>{chat.title}</h3>
                   <p className="chat-preview">

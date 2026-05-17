@@ -17,32 +17,53 @@ export class Cascadeflow {
     }
 
     // Privacy/Sensitive queries -> Ollama (Local)
-    if (q.includes('password') || q.includes('private') || q.includes('secret') || q.includes('ssn')) {
+    if (q.includes('password') || q.includes('private') || q.includes('secret') || q.includes('ssn') || q.includes('key')) {
       return this.selectModel('llama3', 'Privacy detected: Routing to local Ollama instance for security.');
     }
 
-    // High complexity / Regulation -> Anthropic (Claude)
-    if (complexity > 12 || q.includes('sebi') || q.includes('regulation') || q.includes('legal')) {
-      return this.selectModel('claude-3-5-sonnet-20240620', 'High complexity: Using Claude 3.5 Sonnet for deep analysis.');
-    } 
+    // Route based on complexity score buckets
+    if (complexity >= 14) {
+      return this.selectModel('gpt-4o', `Extreme complexity (Score ${complexity}): Routing to GPT-4o for advanced reasoning & strategic math.`);
+    }
     
-    // Financial Math / Precise Calculation -> OpenAI (GPT-4o)
-    if (q.includes('calculate') || q.includes('math') || q.includes('formula') || q.includes('tax')) {
-      return this.selectModel('gpt-4o-mini', 'Calculation detected: Routing to OpenAI for mathematical precision.');
+    if (complexity >= 9) {
+      // Differentiate between deep analysis/data (Gemini) vs strict regulation/legal (Claude)
+      if (q.includes('sebi') || q.includes('regulation') || q.includes('legal') || q.includes('law') || q.includes('compliance')) {
+        return this.selectModel('claude-3-5-sonnet-20240620', `High complexity regulatory query (Score ${complexity}): Using Claude 3.5 Sonnet.`);
+      } else {
+        return this.selectModel('gemini-1.5-pro', `High complexity data analysis (Score ${complexity}): Routing to Gemini 1.5 Pro.`);
+      }
+    }
+    
+    if (complexity >= 5) {
+      return this.selectModel('gpt-4o-mini', `Medium complexity (Score ${complexity}): Routing to GPT-4o Mini for precise balanced analysis.`);
     }
 
-    // Default / Fast -> Groq (Llama 8B)
-    return this.selectModel('llama-3.1-8b-instant', 'Standard query: Using Groq for real-time response.');
+    // Default / Low complexity
+    return this.selectModel('llama-3.1-8b-instant', `Standard query (Score ${complexity}): Using Groq Llama 3.1 8B for instant response.`);
   }
 
   analyzeComplexity(query) {
     let score = 0;
     const q = query.toLowerCase();
     
-    // Complexity markers
-    if (q.includes('impact') || q.includes('analyze') || q.includes('future')) score += 5;
-    if (q.includes('sebi') || q.includes('regulation') || q.includes('long-term')) score += 3;
-    if (q.length > 100) score += 2;
+    // Low-mid difficulty signals: calculations, data extraction
+    if (q.includes('calculate') || q.includes('math') || q.includes('formula') || q.includes('tax') || q.includes('interest')) score += 4;
+    if (q.includes('compare') || q.includes('vs') || q.includes('difference')) score += 3;
+    
+    // High difficulty signals: analysis, long-term impact, regulation
+    if (q.includes('impact') || q.includes('analyze') || q.includes('future') || q.includes('forecast')) score += 5;
+    if (q.includes('sebi') || q.includes('regulation') || q.includes('legal') || q.includes('law') || q.includes('compliance')) score += 6;
+    if (q.includes('long-term') || q.includes('portfolio') || q.includes('strategy') || q.includes('planning')) score += 5;
+    
+    // Extreme difficulty signals: deep reasoning, risk modeling, custom portfolio structures
+    if (q.includes('optimize') || q.includes('risk modeling') || q.includes('scenario') || q.includes('stress test')) score += 8;
+    if (q.includes('valuation') || q.includes('dcf') || q.includes('black-scholes') || q.includes('derivative')) score += 8;
+    
+    // Length as a proxy for detail / context size
+    if (q.length > 300) score += 5;
+    else if (q.length > 150) score += 3;
+    else if (q.length > 50) score += 1;
     
     return score;
   }

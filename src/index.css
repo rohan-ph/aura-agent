@@ -568,14 +568,14 @@ h1, h2, h3 {
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }
 
-.fact-content {
+.fact-entry .fact-content {
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
   position: relative;
 }
 
-.fact-dot {
+.fact-entry .fact-dot {
   width: 8px;
   height: 8px;
   background: var(--primary);
@@ -585,14 +585,14 @@ h1, h2, h3 {
   box-shadow: 0 0 10px var(--primary);
 }
 
-.fact-text {
+.fact-entry .fact-text {
   font-size: 0.85rem;
   color: var(--text);
   line-height: 1.4;
   flex: 1;
 }
 
-.fact-time {
+.fact-entry .fact-time {
   font-size: 0.65rem;
   color: var(--text-muted);
   margin-left: 0.5rem;
@@ -684,7 +684,7 @@ h1, h2, h3 {
   padding-left: 1rem;
 }
 
-.fact-dot {
+.fact-item .fact-dot {
   width: 6px;
   height: 6px;
   background: var(--accent);
@@ -695,13 +695,13 @@ h1, h2, h3 {
   box-shadow: 0 0 8px var(--accent);
 }
 
-.fact-content {
+.fact-item .fact-content {
   font-size: 0.8rem;
   color: var(--text);
   line-height: 1.4;
 }
 
-.fact-time {
+.fact-item .fact-time {
   font-size: 0.6rem;
   color: var(--text-muted);
   margin-top: 0.2rem;
