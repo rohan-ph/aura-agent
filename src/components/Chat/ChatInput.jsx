@@ -1,8 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Send, Zap } from 'lucide-react';
 
 const ChatInput = ({ onSend, isProcessing }) => {
   const [input, setInput] = useState('');
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (!isProcessing && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isProcessing]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -16,6 +23,7 @@ const ChatInput = ({ onSend, isProcessing }) => {
     <form className="chat-input-container" onSubmit={handleSubmit}>
       <div className="input-wrapper">
         <input
+          ref={inputRef}
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
