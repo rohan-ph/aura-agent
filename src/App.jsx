@@ -161,7 +161,7 @@ function App() {
       ...formData,
     };
     hindsightInstance.save();
-    setMentalModel(hindsightInstance.getMentalModel());
+    setMentalModel({ ...hindsightInstance.getMentalModel() });
     syncToDB(hindsightInstance.getMentalModel(), hindsightInstance.getFacts(), auditTrail, currentSpend, conversations);
   };
 
@@ -335,8 +335,8 @@ function App() {
       const updatedModel = hindsightInstance.getMentalModel();
       const updatedFacts = hindsightInstance.getFacts();
 
-      setMentalModel(updatedModel);
-      setFacts(updatedFacts);
+      setMentalModel({ ...updatedModel });
+      setFacts([...updatedFacts]);
 
       setMessages(newMessages);
       
