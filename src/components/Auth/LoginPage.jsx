@@ -29,7 +29,7 @@ const LoginPage = ({ onLogin }) => {
     }
 
     setLoading(true);
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const apiUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '');
     const endpoint = isSignUp ? '/api/auth/signup' : '/api/auth/login';
     const payload = isSignUp ? { email, password, name } : { email, password };
 
@@ -55,7 +55,8 @@ const LoginPage = ({ onLogin }) => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
+    const googleApiUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '');
+    window.location.href = `${googleApiUrl}/api/auth/google`;
   };
 
   return (

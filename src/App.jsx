@@ -19,6 +19,8 @@ const groq = new Groq({
 });
 
 function App() {
+  const apiUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '');
+
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('afa_is_logged_in') === 'true';
   });
@@ -167,7 +169,7 @@ function App() {
   const syncToDB = async (updatedModel, updatedFacts, updatedTrail, updatedSpend, updatedConversations) => {
     if (!userToken) return;
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/user/sync`, {
+      await fetch(`${apiUrl}/api/user/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -376,7 +378,7 @@ function App() {
     const hydrateSession = async () => {
       if (isLoggedIn && userToken) {
         try {
-          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/user/me`, {
+          const response = await fetch(`${apiUrl}/api/user/me`, {
             headers: { 'Authorization': `Bearer ${userToken}` }
           });
           const data = await response.json();
