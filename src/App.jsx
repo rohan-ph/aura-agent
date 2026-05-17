@@ -5,7 +5,6 @@ import { INITIAL_MARKET_DATA } from './lib/mockData';
 import ChatMessage from './components/Chat/ChatMessage';
 import ChatInput from './components/Chat/ChatInput';
 import CascadeAudit from './components/Intelligence/CascadeAudit';
-import MemoryBank from './components/Intelligence/MemoryBank';
 import PortfolioCard from './components/Sidebar/PortfolioCard';
 import LoginPage from './components/Auth/LoginPage';
 import UserProfile from './components/Profile/UserProfile';
@@ -42,10 +41,10 @@ function App() {
   const [marketData, setMarketData] = useState(INITIAL_MARKET_DATA.indices);
   const [conversations, setConversations] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
-  
+
   // Initialize hindsight with user email if logged in
   const [hindsightInstance, setHindsightInstance] = useState(() => new Hindsight(localStorage.getItem('afa_user_email') || 'guest'));
-  
+
   const chatEndRef = useRef(null);
 
   // Handle Google OAuth redirect — picks up ?token=... from URL
@@ -53,7 +52,7 @@ function App() {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
     const userRaw = params.get('user');
-    
+
     if (token) {
       if (userRaw) {
         // Old way (fallback)
@@ -80,7 +79,7 @@ function App() {
         return {
           ...idx,
           value: newValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-          change: (parseFloat(idx.change) + parseFloat(change)/100).toFixed(2) + '%',
+          change: (parseFloat(idx.change) + parseFloat(change) / 100).toFixed(2) + '%',
           trend: parseFloat(change) >= 0 ? 'up' : 'down'
         };
       }));
@@ -96,7 +95,7 @@ function App() {
     setIsLoggedIn(true);
     setUserEmail(data.user.email);
     setUserToken(data.token);
-    
+
     // Update local state with DB data
     if (data.user.mentalModel) setMentalModel(data.user.mentalModel);
     if (data.user.facts) setFacts(data.user.facts);
@@ -105,7 +104,7 @@ function App() {
     setHindsightInstance(newHindsight);
     setMentalModel(newHindsight.getMentalModel());
     setFacts(newHindsight.getFacts());
-    
+
     if (data.user.auditTrail) setAuditTrail(data.user.auditTrail);
     if (data.user.totalSpend) setCurrentSpend(data.user.totalSpend.toString());
     if (data.user.conversations) setConversations(data.user.conversations);
@@ -132,7 +131,7 @@ function App() {
       messages: [{ role: 'assistant', content: "New conversation started. I'm ready to assist you. How can I help?" }],
       timestamp: new Date()
     };
-    
+
     setConversations(prev => [newChat, ...prev]);
     setActiveChatId(newChatId);
     setMessages(newChat.messages);
@@ -195,7 +194,7 @@ function App() {
     setIsProcessing(true);
 
     const cascadeflowInstance = new Cascadeflow(1.00);
-    
+
     try {
       // 1. Memory Recall: What do we already know?
       const relatedFacts = hindsightInstance.recall(content);
@@ -203,7 +202,7 @@ function App() {
 
       // 2. Intelligence Routing: Which model should answer?
       const { config, decision } = cascadeflowInstance.route(content);
-      
+
       // 3. Update Audit Trail immediately
       setAuditTrail(cascadeflowInstance.getAuditTrail());
       setCurrentSpend(cascadeflowInstance.getSpend().toString());
@@ -238,8 +237,8 @@ function App() {
 
       try {
         if (config.provider === 'groq' || config.provider === 'openai') {
-          const apiKey = config.provider === 'groq' 
-            ? import.meta.env.VITE_GROQ_API_KEY 
+          const apiKey = config.provider === 'groq'
+            ? import.meta.env.VITE_GROQ_API_KEY
             : import.meta.env.VITE_OPENAI_API_KEY;
           const baseUrl = config.provider === 'groq'
             ? 'https://api.groq.com/openai/v1'
@@ -247,7 +246,7 @@ function App() {
 
           const res = await fetch(`${baseUrl}/chat/completions`, {
             method: 'POST',
-            headers: { 
+            headers: {
               'Authorization': `Bearer ${apiKey}`,
               'Content-Type': 'application/json'
             },
@@ -261,7 +260,7 @@ function App() {
 
           const res = await fetch(`${baseUrl}/chat/completions`, {
             method: 'POST',
-            headers: { 
+            headers: {
               'Authorization': `Bearer ${apiKey}`,
               'Content-Type': 'application/json'
             },
@@ -308,7 +307,7 @@ function App() {
           // If a premium model fails, try to fall back to GPT-4o-mini first
           const fallbackRes = await fetch(`https://api.openai.com/v1/chat/completions`, {
             method: 'POST',
-            headers: { 
+            headers: {
               'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
               'Content-Type': 'application/json'
             },
@@ -328,7 +327,7 @@ function App() {
 
       if (!response) response = "I'm sorry, I couldn't generate a response.";
       const newMessages = [...messages, { role: 'user', content }, { role: 'assistant', content: response }];
-      
+
       // 5. Hindsight: Reflect on the interaction
       hindsightInstance.retain({ role: 'user', content });
       hindsightInstance.reflect();
@@ -339,20 +338,20 @@ function App() {
       setFacts([...updatedFacts]);
 
       setMessages(newMessages);
-      
+
       // Update conversations array
       setConversations(prev => {
         const updated = prev.map(chat => {
           if (chat.id === (activeChatId || 'default')) {
-            return { 
-              ...chat, 
+            return {
+              ...chat,
               messages: newMessages,
               title: chat.title === 'New Conversation' ? content.substring(0, 30) + '...' : chat.title
             };
           }
           return chat;
         });
-        
+
         // If no active chat exists, create one
         if (!activeChatId && !prev.find(c => c.id === 'default')) {
           const defaultChat = { id: 'default', title: content.substring(0, 30) + '...', messages: newMessages, timestamp: new Date() };
@@ -360,7 +359,7 @@ function App() {
           syncToDB(updatedModel, updatedFacts, cascadeflowInstance.getAuditTrail(), cascadeflowInstance.getSpend(), result);
           return result;
         }
-        
+
         syncToDB(updatedModel, updatedFacts, cascadeflowInstance.getAuditTrail(), cascadeflowInstance.getSpend(), updated);
         return updated;
       });
@@ -414,7 +413,7 @@ function App() {
         const fluctuation = (Math.random() - 0.5) * 20; // Fluctuate by +/- 10 points
         const newValue = parseFloat(item.value.replace(/,/g, '')) + fluctuation;
         const newChange = (fluctuation / newValue) * 100;
-        
+
         return {
           ...item,
           value: newValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
@@ -438,39 +437,39 @@ function App() {
           <div className="logo-icon"><Zap size={20} /></div>
           <span className="logo-text">Aura Agent</span>
         </div>
-        
+
         <nav className="sidebar-nav">
-          <div 
+          <div
             className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
             onClick={() => setActiveTab('dashboard')}
           >
             <LayoutDashboard size={18} /> Dashboard
           </div>
-          <div 
+          <div
             className={`nav-item ${activeTab === 'chat' ? 'active' : ''}`}
             onClick={() => setActiveTab('chat')}
           >
             <MessageSquare size={18} /> Chat
           </div>
-          <div 
+          <div
             className={`nav-item ${activeTab === 'history' ? 'active' : ''}`}
             onClick={() => setActiveTab('history')}
           >
             <History size={18} /> History
           </div>
-          <div 
+          <div
             className="nav-item action-item"
             onClick={handleNewConversation}
           >
             <PlusCircle size={18} color="var(--primary)" /> New Conversation
           </div>
-          <div 
+          <div
             className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
             onClick={() => setActiveTab('profile')}
           >
             <User size={18} /> Profile
           </div>
-          <div 
+          <div
             className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
             onClick={() => setActiveTab('settings')}
           >
@@ -492,10 +491,10 @@ function App() {
         <header className="chat-header">
           <div className="header-info">
             <h2 className="text-gradient">
-              {activeTab === 'chat' ? 'Financial Strategy Session' : 
-               activeTab === 'dashboard' ? 'Intelligence Dashboard' :
-               activeTab === 'profile' ? 'Your Profile' : 
-               activeTab === 'history' ? 'Conversation History' : 'System Settings'}
+              {activeTab === 'chat' ? 'Financial Strategy Session' :
+                activeTab === 'dashboard' ? 'Intelligence Dashboard' :
+                  activeTab === 'profile' ? 'Your Profile' :
+                    activeTab === 'history' ? 'Conversation History' : 'System Settings'}
             </h2>
             <div className="status-indicator">
               <span className="dot"></span> Online
@@ -519,8 +518,8 @@ function App() {
           <div className="history-view">
             <div className="history-grid">
               {conversations.map((chat, i) => (
-                <div 
-                  key={chat.id} 
+                <div
+                  key={chat.id}
                   className="history-card animate-fade-in"
                   style={{ animationDelay: `${i * 0.05}s` }}
                   onClick={() => {
@@ -532,7 +531,7 @@ function App() {
                     <MessageSquare size={18} className="chat-icon" />
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <span className="chat-date">{new Date(chat.timestamp || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                      <div 
+                      <div
                         onClick={(e) => handleDeleteConversation(e, chat.id)}
                         style={{ cursor: 'pointer', color: '#f85149', display: 'flex', alignItems: 'center' }}
                         title="Delete Conversation"
@@ -569,10 +568,6 @@ function App() {
                 <h3>Cascade Performance</h3>
                 <CascadeAudit auditTrail={auditTrail} currentSpend={currentSpend} />
               </div>
-              <div className="dashboard-card">
-                <h3>Mental Model</h3>
-                <MemoryBank mentalModel={mentalModel} facts={facts} />
-              </div>
             </div>
           </div>
         )}
@@ -606,9 +601,9 @@ function App() {
       {activeTab === 'chat' && (
         <aside className="intelligence-panel">
           <div className="intelligence-card-wrapper">
-            <CascadeAudit 
-              auditTrail={auditTrail} 
-              currentSpend={currentSpend} 
+            <CascadeAudit
+              auditTrail={auditTrail}
+              currentSpend={currentSpend}
               facts={facts}
             />
           </div>
