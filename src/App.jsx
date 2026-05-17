@@ -566,7 +566,7 @@ function App() {
             <div className="dashboard-grid">
               <div className="dashboard-card">
                 <h3>Cascade Performance</h3>
-                <CascadeAudit auditTrail={auditTrail} currentSpend={currentSpend} />
+                <CascadeAudit auditTrail={auditTrail} currentSpend={currentSpend} facts={facts} />
               </div>
             </div>
           </div>
