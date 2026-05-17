@@ -19,7 +19,7 @@ const groq = new Groq({
 });
 
 function App() {
-  const apiUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '');
+  const apiUrl = import.meta.env.DEV ? 'http://localhost:5000' : (import.meta.env.VITE_API_URL === 'http://localhost:5000' ? '' : (import.meta.env.VITE_API_URL || ''));
 
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('afa_is_logged_in') === 'true';
@@ -43,6 +43,7 @@ function App() {
   const [marketData, setMarketData] = useState(INITIAL_MARKET_DATA.indices);
   const [conversations, setConversations] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
   // Initialize hindsight with user email if logged in
   const [hindsightInstance, setHindsightInstance] = useState(() => new Hindsight(localStorage.getItem('afa_user_email') || 'guest'));
@@ -142,17 +143,26 @@ function App() {
 
   const handleDeleteConversation = (e, chatId) => {
     e.stopPropagation();
-    if (window.confirm("Are you sure you want to delete this conversation?")) {
-      setConversations(prev => {
-        const updated = prev.filter(c => c.id !== chatId);
-        syncToDB(mentalModel, facts, auditTrail, currentSpend, updated);
-        return updated;
-      });
-      if (activeChatId === chatId) {
-        setActiveChatId(null);
-        setMessages([{ role: 'assistant', content: "Welcome back to your **Aura Agent**. I'm now connected to **Groq Cloud**. How can I assist you today?" }]);
-      }
+    setPendingDeleteId(chatId);
+  };
+
+  const confirmDelete = (e, chatId) => {
+    e.stopPropagation();
+    setConversations(prev => {
+      const updated = prev.filter(c => c.id !== chatId);
+      syncToDB(mentalModel, facts, auditTrail, currentSpend, updated);
+      return updated;
+    });
+    if (activeChatId === chatId) {
+      setActiveChatId(null);
+      setMessages([{ role: 'assistant', content: "Welcome back to your **Aura Agent**. I'm now connected to **Groq Cloud**. How can I assist you today?" }]);
     }
+    setPendingDeleteId(null);
+  };
+
+  const cancelDelete = (e) => {
+    e.stopPropagation();
+    setPendingDeleteId(null);
   };
 
   const handleUpdateProfile = (formData) => {
@@ -533,13 +543,32 @@ function App() {
                     <MessageSquare size={18} className="chat-icon" />
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <span className="chat-date">{new Date(chat.timestamp || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                      <div
-                        onClick={(e) => handleDeleteConversation(e, chat.id)}
-                        style={{ cursor: 'pointer', color: '#f85149', display: 'flex', alignItems: 'center' }}
-                        title="Delete Conversation"
-                      >
-                        <Trash2 size={16} />
-                      </div>
+                      {pendingDeleteId === chat.id ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }} onClick={e => e.stopPropagation()}>
+                          <div
+                            onClick={(e) => confirmDelete(e, chat.id)}
+                            style={{ cursor: 'pointer', color: '#f85149', display: 'flex', alignItems: 'center', padding: '2px 6px', borderRadius: '4px', background: 'rgba(248,81,73,0.15)' }}
+                            title="Confirm Delete"
+                          >
+                            <Check size={14} />
+                          </div>
+                          <div
+                            onClick={cancelDelete}
+                            style={{ cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', padding: '2px 6px', borderRadius: '4px', background: 'rgba(139,148,158,0.15)' }}
+                            title="Cancel"
+                          >
+                            <X size={14} />
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          onClick={(e) => handleDeleteConversation(e, chat.id)}
+                          style={{ cursor: 'pointer', color: '#f85149', display: 'flex', alignItems: 'center' }}
+                          title="Delete Conversation"
+                        >
+                          <Trash2 size={16} />
+                        </div>
+                      )}
                     </div>
                   </div>
                   <h3>{chat.title}</h3>

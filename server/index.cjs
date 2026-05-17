@@ -24,20 +24,62 @@ const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'afa_secret_key';
 
 let isDbConnected = false;
+let dbConnectionPromise = null;
 const inMemoryUsers = {}; // Fallback in-memory store
 
-// ─── MongoDB Connection ─────────────────────────────────────────────────────
-mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
-  .then(() => { console.log('✅ Connected to MongoDB Atlas'); isDbConnected = true; })
-  .catch(err => { console.error('⚠️  MongoDB offline — Fallback Mode active:', err.message); });
+async function connectToDatabase() {
+  if (dbConnectionPromise) {
+    return dbConnectionPromise;
+  }
+
+  if (!process.env.MONGODB_URI) {
+    console.warn('⚠️  MONGODB_URI is not defined. Fallback Mode active.');
+    isDbConnected = false;
+    return null;
+  }
+
+  dbConnectionPromise = mongoose.connect(process.env.MONGODB_URI, { 
+    serverSelectionTimeoutMS: 5000 
+  })
+    .then((mongooseInstance) => { 
+      console.log('✅ Connected to MongoDB Atlas'); 
+      isDbConnected = true; 
+      return mongooseInstance;
+    })
+    .catch(err => { 
+      console.error('⚠️  MongoDB connection failed:', err.message); 
+      isDbConnected = false;
+      dbConnectionPromise = null; // Let it retry on subsequent requests
+      throw err;
+    });
+
+  return dbConnectionPromise;
+}
+
+// Middleware to ensure DB connection attempt completes before handling any route
+app.use(async (req, res, next) => {
+  try {
+    await connectToDatabase();
+  } catch (err) {
+    // Proceed so that fallback mode can still run
+  }
+  next();
+});
+
+const clientUrl = process.env.NODE_ENV === 'production' 
+  ? '' 
+  : (process.env.CLIENT_URL || 'http://localhost:5173');
 
 // ─── Passport Google Strategy ───────────────────────────────────────────────
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: 'http://localhost:5000/api/auth/google/callback'
+  callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5000/api/auth/google/callback'
 }, async (accessToken, refreshToken, profile, done) => {
   try {
+    // Await DB connection in the strategy callback too
+    await connectToDatabase().catch(() => {});
+
     const email = profile.emails[0].value;
     const name = profile.displayName;
 
@@ -133,11 +175,13 @@ app.get('/api/auth/google',
 );
 
 app.get('/api/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: 'http://localhost:5173/?error=google_failed' }),
+  (req, res, next) => {
+    passport.authenticate('google', { failureRedirect: `${clientUrl}/?error=google_failed` })(req, res, next);
+  },
   (req, res) => {
     const user = req.user;
     const token = jwt.sign({ userId: user._id || `demo_${user.email}` }, JWT_SECRET, { expiresIn: '7d' });
-    res.redirect(`http://localhost:5173/?token=${token}`);
+    res.redirect(`${clientUrl}/?token=${token}`);
   }
 );
 
