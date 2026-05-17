@@ -8,7 +8,7 @@ import CascadeAudit from './components/Intelligence/CascadeAudit';
 import PortfolioCard from './components/Sidebar/PortfolioCard';
 import LoginPage from './components/Auth/LoginPage';
 import UserProfile from './components/Profile/UserProfile';
-import { LayoutDashboard, MessageSquare, Settings, LogOut, Zap, User, PlusCircle, Search, FolderOpen, Sparkles, MoreHorizontal, SquarePen, History, Trash2, Check, X as XIcon } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Settings, LogOut, Zap, User, PlusCircle, Search, FolderOpen, Sparkles, MoreHorizontal, SquarePen, History, Trash2, Check, X as XIcon, Menu } from 'lucide-react';
 
 import Groq from 'groq-sdk';
 
@@ -44,6 +44,7 @@ function App() {
   const [conversations, setConversations] = useState([]);
   const [activeChatId, setActiveChatId] = useState(null);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Initialize hindsight with user email if logged in
   const [hindsightInstance, setHindsightInstance] = useState(() => new Hindsight(localStorage.getItem('afa_user_email') || 'guest'));
@@ -441,49 +442,64 @@ function App() {
     return <LoginPage onLogin={handleLogin} />;
   }
 
+  const navTo = (tab) => {
+    setActiveTab(tab);
+    setIsSidebarOpen(false);
+  };
+
   return (
     <div className="app-container">
+      {/* Mobile sidebar backdrop */}
+      {isSidebarOpen && (
+        <div className="sidebar-backdrop" onClick={() => setIsSidebarOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside className="sidebar">
-        <div className="logo">
-          <div className="logo-icon"><Zap size={20} /></div>
-          <span className="logo-text">Aura Agent</span>
+      <aside className={`sidebar${isSidebarOpen ? ' sidebar-open' : ''}`}>
+        <div className="sidebar-top-row">
+          <div className="logo">
+            <div className="logo-icon"><Zap size={20} /></div>
+            <span className="logo-text">Aura Agent</span>
+          </div>
+          <button className="sidebar-close-btn" onClick={() => setIsSidebarOpen(false)}>
+            <XIcon size={20} />
+          </button>
         </div>
 
         <nav className="sidebar-nav">
           <div
             className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
+            onClick={() => navTo('dashboard')}
           >
             <LayoutDashboard size={18} /> Dashboard
           </div>
           <div
             className={`nav-item ${activeTab === 'chat' ? 'active' : ''}`}
-            onClick={() => setActiveTab('chat')}
+            onClick={() => navTo('chat')}
           >
             <MessageSquare size={18} /> Chat
           </div>
           <div
             className={`nav-item ${activeTab === 'history' ? 'active' : ''}`}
-            onClick={() => setActiveTab('history')}
+            onClick={() => navTo('history')}
           >
             <History size={18} /> History
           </div>
           <div
             className="nav-item action-item"
-            onClick={handleNewConversation}
+            onClick={() => { handleNewConversation(); setIsSidebarOpen(false); }}
           >
             <PlusCircle size={18} color="var(--primary)" /> New Conversation
           </div>
           <div
             className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-            onClick={() => setActiveTab('profile')}
+            onClick={() => navTo('profile')}
           >
             <User size={18} /> Profile
           </div>
           <div
             className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('settings')}
+            onClick={() => navTo('settings')}
           >
             <Settings size={18} /> Settings
           </div>
@@ -501,6 +517,9 @@ function App() {
       {/* Main Content Area based on Tab */}
       <main className="main-chat">
         <header className="chat-header">
+          <button className="hamburger-btn" onClick={() => setIsSidebarOpen(true)}>
+            <Menu size={22} />
+          </button>
           <div className="header-info">
             <h2 className="text-gradient">
               {activeTab === 'chat' ? 'Financial Strategy Session' :
@@ -643,6 +662,45 @@ function App() {
           </div>
         </aside>
       )}
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="mobile-bottom-nav">
+        <button
+          className={`mobile-nav-btn${activeTab === 'chat' ? ' active' : ''}`}
+          onClick={() => setActiveTab('chat')}
+        >
+          <MessageSquare size={20} />
+          <span>Chat</span>
+        </button>
+        <button
+          className={`mobile-nav-btn${activeTab === 'dashboard' ? ' active' : ''}`}
+          onClick={() => setActiveTab('dashboard')}
+        >
+          <LayoutDashboard size={20} />
+          <span>Dashboard</span>
+        </button>
+        <button
+          className="mobile-nav-btn new-chat-btn"
+          onClick={handleNewConversation}
+        >
+          <PlusCircle size={22} />
+          <span>New</span>
+        </button>
+        <button
+          className={`mobile-nav-btn${activeTab === 'history' ? ' active' : ''}`}
+          onClick={() => setActiveTab('history')}
+        >
+          <History size={20} />
+          <span>History</span>
+        </button>
+        <button
+          className={`mobile-nav-btn${activeTab === 'profile' ? ' active' : ''}`}
+          onClick={() => setActiveTab('profile')}
+        >
+          <User size={20} />
+          <span>Profile</span>
+        </button>
+      </nav>
     </div>
   );
 }

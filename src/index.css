@@ -1319,3 +1319,328 @@ h1, h2, h3 {
   font-size: 0.85rem;
   margin-bottom: 1rem;
 }
+
+/* ============================================
+   RESPONSIVE — Sidebar overlay controls
+   ============================================ */
+
+/* Close button inside sidebar: hidden on desktop */
+.sidebar-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+}
+
+.sidebar-top-row .logo {
+  margin-bottom: 0;
+}
+
+.sidebar-close-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 8px;
+  transition: background 0.2s, color 0.2s;
+}
+.sidebar-close-btn:hover {
+  background: var(--surface-hover);
+  color: #fff;
+}
+
+/* Hamburger button: hidden on desktop */
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.hamburger-btn:hover {
+  background: var(--surface-hover);
+}
+
+/* Sidebar backdrop: hidden by default */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 40;
+}
+
+/* Mobile bottom nav: hidden on desktop */
+.mobile-bottom-nav {
+  display: none;
+}
+
+/* Chat header flex alignment */
+.chat-header {
+  display: flex;
+  align-items: center;
+}
+
+/* ============================================
+   TABLET — 769px to 1024px
+   ============================================ */
+@media (max-width: 1024px) {
+  body {
+    overflow: auto;
+  }
+
+  .app-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Sidebar becomes a slide-in overlay */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100%;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-right: 1px solid var(--glass-border);
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    display: block;
+  }
+
+  .sidebar-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hamburger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Intelligence panel hidden on tablet — accessible via Dashboard tab */
+  .intelligence-panel {
+    display: none;
+  }
+
+  .main-chat {
+    grid-column: 1;
+    min-height: 0;
+  }
+
+  .history-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+
+  .profile-cards-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ============================================
+   MOBILE — up to 768px
+   ============================================ */
+@media (max-width: 768px) {
+  body {
+    overflow: hidden;
+  }
+
+  .app-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+    height: 100dvh;
+    height: 100vh; /* fallback */
+  }
+
+  /* ── Bottom nav bar ── */
+  .mobile-bottom-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background: var(--glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--glass-border);
+    padding: 0.5rem 0 max(0.5rem, env(safe-area-inset-bottom));
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 30;
+  }
+
+  .mobile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.4rem 0.75rem;
+    border-radius: 10px;
+    transition: color 0.2s, background 0.2s;
+    min-width: 52px;
+    font-size: 0.65rem;
+    font-family: inherit;
+  }
+
+  .mobile-nav-btn span {
+    font-size: 0.65rem;
+    line-height: 1;
+  }
+
+  .mobile-nav-btn.active {
+    color: var(--secondary);
+  }
+
+  .mobile-nav-btn.new-chat-btn {
+    color: var(--primary);
+    background: rgba(35, 134, 54, 0.1);
+    border: 1px solid rgba(35, 134, 54, 0.2);
+  }
+
+  /* Pad main content above bottom nav */
+  .main-chat {
+    padding-bottom: 70px;
+  }
+
+  /* ── Header ── */
+  .chat-header {
+    padding: 1rem;
+  }
+
+  .header-info h2 {
+    font-size: 1rem;
+  }
+
+  /* ── Messages ── */
+  .messages-container {
+    padding: 1rem;
+  }
+
+  .chat-message {
+    max-width: 95%;
+    padding: 0.75rem;
+    gap: 0.6rem;
+  }
+
+  /* ── Chat Input ── */
+  .chat-input-container {
+    padding: 0.75rem 1rem;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* ── History ── */
+  .history-view {
+    padding: 1rem;
+    padding-bottom: 80px;
+  }
+
+  .history-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .history-card {
+    padding: 1.25rem;
+  }
+
+  /* ── Dashboard / Settings ── */
+  .dashboard-view,
+  .settings-view {
+    padding: 1rem;
+    padding-bottom: 80px;
+  }
+
+  .setting-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .setting-row input,
+  .setting-row select {
+    width: 100%;
+  }
+
+  /* ── Profile ── */
+  .profile-view {
+    padding: 1rem;
+    padding-bottom: 80px;
+  }
+
+  .profile-hero {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.5rem;
+    gap: 1rem;
+  }
+
+  .profile-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-info-card.wide {
+    grid-column: span 1;
+  }
+
+  .risk-selector {
+    flex-wrap: wrap;
+  }
+
+  /* ── Login ── */
+  .login-card {
+    margin: 1rem;
+    padding: 2rem 1.5rem;
+    border-radius: 20px;
+  }
+
+  /* ── Intelligence panel hidden on mobile ── */
+  .intelligence-panel {
+    display: none;
+  }
+}
+
+/* ============================================
+   SMALL MOBILE — up to 400px
+   ============================================ */
+@media (max-width: 400px) {
+  .mobile-nav-btn {
+    padding: 0.4rem 0.5rem;
+    min-width: 44px;
+  }
+
+  .mobile-nav-btn span {
+    display: none;
+  }
+
+  .header-info h2 {
+    font-size: 0.9rem;
+  }
+
+  .chat-message {
+    max-width: 100%;
+  }
+}
+
