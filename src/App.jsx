@@ -8,7 +8,7 @@ import CascadeAudit from './components/Intelligence/CascadeAudit';
 import PortfolioCard from './components/Sidebar/PortfolioCard';
 import LoginPage from './components/Auth/LoginPage';
 import UserProfile from './components/Profile/UserProfile';
-import { LayoutDashboard, MessageSquare, Settings, LogOut, Zap, User, PlusCircle, Search, FolderOpen, Sparkles, MoreHorizontal, SquarePen, History, Trash2 } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Settings, LogOut, Zap, User, PlusCircle, Search, FolderOpen, Sparkles, MoreHorizontal, SquarePen, History, Trash2, Check, X as XIcon } from 'lucide-react';
 
 import Groq from 'groq-sdk';
 
@@ -544,30 +544,33 @@ function App() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <span className="chat-date">{new Date(chat.timestamp || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                       {pendingDeleteId === chat.id ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }} onClick={e => e.stopPropagation()}>
-                          <div
-                            onClick={(e) => confirmDelete(e, chat.id)}
-                            style={{ cursor: 'pointer', color: '#f85149', display: 'flex', alignItems: 'center', padding: '2px 6px', borderRadius: '4px', background: 'rgba(248,81,73,0.15)' }}
+                        <div
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={(e) => { e.stopPropagation(); confirmDelete(e, chat.id); }}
+                            style={{ cursor: 'pointer', color: '#f85149', display: 'flex', alignItems: 'center', padding: '2px 6px', borderRadius: '4px', background: 'rgba(248,81,73,0.15)', border: 'none' }}
                             title="Confirm Delete"
                           >
                             <Check size={14} />
-                          </div>
-                          <div
-                            onClick={cancelDelete}
-                            style={{ cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', padding: '2px 6px', borderRadius: '4px', background: 'rgba(139,148,158,0.15)' }}
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); cancelDelete(e); }}
+                            style={{ cursor: 'pointer', color: '#8b949e', display: 'flex', alignItems: 'center', padding: '2px 6px', borderRadius: '4px', background: 'rgba(139,148,158,0.15)', border: 'none' }}
                             title="Cancel"
                           >
-                            <X size={14} />
-                          </div>
+                            <XIcon size={14} />
+                          </button>
                         </div>
                       ) : (
-                        <div
-                          onClick={(e) => handleDeleteConversation(e, chat.id)}
-                          style={{ cursor: 'pointer', color: '#f85149', display: 'flex', alignItems: 'center' }}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteConversation(e, chat.id); }}
+                          style={{ cursor: 'pointer', color: '#f85149', display: 'flex', alignItems: 'center', background: 'none', border: 'none', padding: 0 }}
                           title="Delete Conversation"
                         >
                           <Trash2 size={16} />
-                        </div>
+                        </button>
                       )}
                     </div>
                   </div>
