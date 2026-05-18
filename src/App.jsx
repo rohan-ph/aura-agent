@@ -86,6 +86,8 @@ function App() {
         // New way: Just set token and let hydrateSession do the work
         setUserToken(token);
         setIsLoggedIn(true);
+        localStorage.setItem('afa_is_logged_in', 'true');
+        localStorage.setItem('afa_token', token);
       }
       // Clean the URL
       window.history.replaceState({}, document.title, '/');
@@ -527,6 +529,13 @@ Based on your **${currentModel.riskProfile || 'Balanced'}** profile, I recommend
             if (data.user.conversations) setConversations(data.user.conversations);
             if (data.user.auditTrail) setAuditTrail(data.user.auditTrail);
             if (data.user.totalSpend) setCurrentSpend(data.user.totalSpend.toString());
+            
+            // Sync user details to local storage and state for seamless refresh retention
+            setUserEmail(data.user.email);
+            localStorage.setItem('afa_user_email', data.user.email);
+          } else if (response.status === 401) {
+            // Securely log out if the token has expired or is invalid
+            handleLogout();
           }
         } catch (err) {
           console.error('Failed to hydrate session:', err);

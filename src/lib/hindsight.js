@@ -66,8 +66,11 @@ export class Hindsight {
     }
 
     // 4. Financial Context Extraction
-    if (lowerText.includes('invest') || lowerText.includes('save') || lowerText.includes('portfolio')) {
-      this.addFact(`User is discussing: ${text.substring(0, 50)}...`);
+    if (lowerText.includes('invest') || lowerText.includes('save') || lowerText.includes('portfolio') || lowerText.includes('calculate') || lowerText.includes('expenses') || lowerText.includes('revenue') || lowerText.includes('tax') || lowerText.includes('crore') || lowerText.includes('₹') || lowerText.includes('$')) {
+      this.addFact(`User analyzed corporate financials/metrics: "${text.substring(0, 50)}..."`);
+      if (!this.memory.mentalModel.interests.includes('Financial Analysis')) {
+        this.memory.mentalModel.interests.push('Financial Analysis');
+      }
     }
 
     // 5. Risk Profile Detection
