@@ -325,6 +325,7 @@ Based on your **${currentModel.riskProfile || 'Balanced'}** profile, I recommend
       let response = "";
       const systemMsg = { role: 'system', content: systemPrompt };
       const chatHistory = [...messages, { role: 'user', content }];
+      const cleanHistory = chatHistory.map(m => ({ role: m.role, content: m.content }));
 
       try {
         console.log(`Routing query to provider: ${config.provider} (Model: ${config.id})`);
@@ -343,7 +344,7 @@ Based on your **${currentModel.riskProfile || 'Balanced'}** profile, I recommend
               'Authorization': `Bearer ${apiKey}`,
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ model: config.id, messages: [systemMsg, ...chatHistory] })
+            body: JSON.stringify({ model: config.id, messages: [systemMsg, ...cleanHistory] })
           });
           
           if (!res.ok) {
@@ -363,7 +364,7 @@ Based on your **${currentModel.riskProfile || 'Balanced'}** profile, I recommend
               'Authorization': `Bearer ${apiKey}`,
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ model: config.id, messages: [systemMsg, ...chatHistory] })
+            body: JSON.stringify({ model: config.id, messages: [systemMsg, ...cleanHistory] })
           });
           
           if (!res.ok) {
@@ -377,7 +378,7 @@ Based on your **${currentModel.riskProfile || 'Balanced'}** profile, I recommend
           try {
             const res = await fetch(`${import.meta.env.VITE_OLLAMA_BASE_URL}/api/chat`, {
               method: 'POST',
-              body: JSON.stringify({ model: config.id, messages: [systemMsg, ...chatHistory], stream: false })
+              body: JSON.stringify({ model: config.id, messages: [systemMsg, ...cleanHistory], stream: false })
             });
             if (!res.ok) throw new Error(`Ollama offline`);
             const data = await res.json();
@@ -398,7 +399,7 @@ Based on your **${currentModel.riskProfile || 'Balanced'}** profile, I recommend
             body: JSON.stringify({
               model: config.id,
               max_tokens: 1024,
-              messages: chatHistory.map(m => ({ role: m.role, content: m.content })),
+              messages: cleanHistory,
               system: systemPrompt
             })
           });
@@ -423,7 +424,7 @@ Based on your **${currentModel.riskProfile || 'Balanced'}** profile, I recommend
               'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`,
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ model: 'llama-3.1-8b-instant', messages: [systemMsg, ...chatHistory] })
+            body: JSON.stringify({ model: 'llama-3.1-8b-instant', messages: [systemMsg, ...cleanHistory] })
           });
           
           if (groqRes.ok) {
@@ -444,7 +445,7 @@ Based on your **${currentModel.riskProfile || 'Balanced'}** profile, I recommend
                 'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
                 'Content-Type': 'application/json'
               },
-              body: JSON.stringify({ model: 'gpt-4o-mini', messages: [systemMsg, ...chatHistory] })
+              body: JSON.stringify({ model: 'gpt-4o-mini', messages: [systemMsg, ...cleanHistory] })
             });
             if (openaiRes.ok) {
               const openaiData = await openaiRes.json();
