@@ -1,10 +1,19 @@
 import { MODEL_CONFIGS } from './mockData';
 
 export class Cascadeflow {
-  constructor(budgetLimit = 1.00) {
+  constructor(budgetLimit = 1.00, strategy = 'Cost Optimized') {
     this.budgetLimit = budgetLimit;
+    this.strategy = strategy;
     this.currentSpend = 0;
     this.auditTrail = [];
+  }
+
+  setStrategy(strategy) {
+    this.strategy = strategy;
+  }
+
+  setBudgetLimit(limit) {
+    this.budgetLimit = limit;
   }
 
   route(query) {
@@ -21,7 +30,25 @@ export class Cascadeflow {
       return this.selectModel('llama3', 'Privacy detected: Routing to local Ollama instance for security.');
     }
 
-    // Route based on complexity score buckets
+    // Route based on active strategy
+    if (this.strategy === 'Strictly Cheap Models') {
+      if (complexity >= 12) {
+        return this.selectModel('gpt-4o-mini', `Strictly Cheap Strategy (Score ${complexity}): Capping at GPT-4o Mini to optimize budget.`);
+      }
+      return this.selectModel('llama-3.1-8b-instant', `Strictly Cheap Strategy (Score ${complexity}): Routing to Groq Llama 3.1 8B (cheapest option).`);
+    }
+
+    if (this.strategy === 'Performance Optimized') {
+      if (complexity >= 5) {
+        return this.selectModel('gpt-4o', `Performance Optimized (Score ${complexity}): Routing to GPT-4o for maximum cognitive power.`);
+      }
+      if (q.includes('sebi') || q.includes('regulation') || q.includes('legal') || q.includes('law') || q.includes('compliance')) {
+        return this.selectModel('claude-3-5-sonnet-20240620', `Performance Optimized (Score ${complexity}): Using Claude 3.5 Sonnet for precise regulatory compliance.`);
+      }
+      return this.selectModel('gemini-1.5-pro', `Performance Optimized (Score ${complexity}): Routing to Gemini 1.5 Pro for advanced analysis.`);
+    }
+
+    // Default: Cost Optimized
     if (complexity >= 14) {
       return this.selectModel('gpt-4o', `Extreme complexity (Score ${complexity}): Routing to GPT-4o for advanced reasoning & strategic math.`);
     }
@@ -80,7 +107,7 @@ export class Cascadeflow {
     };
 
     this.currentSpend += config.costPerQuery;
-    this.auditTrail.unshift(decision); // Newest first
+    this.auditTrail.push(decision); // Append chronological
     return { config, decision };
   }
 
