@@ -2119,6 +2119,7 @@ h1, h2, h3 {
   border-radius: 8px;
   overflow: hidden;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .audit-log-entry:hover {
@@ -2186,6 +2187,7 @@ h1, h2, h3 {
   align-items: flex-start;
   gap: 0.5rem;
   position: relative;
+  flex-shrink: 0;
 }
 
 .memory-log-dot {
